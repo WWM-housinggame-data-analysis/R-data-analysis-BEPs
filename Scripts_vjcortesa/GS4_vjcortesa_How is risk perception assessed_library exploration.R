@@ -13,6 +13,10 @@ script_path <- rstudioapi::getActiveDocumentContext()$path
 scriptfolder_path <- dirname(script_path)
 setwd(scriptfolder_path)
 
+# Load required functions
+function_path <- paste0(scriptfolder_path, "/functions")
+source(file.path(function_path, "vjcortesa_RiskPerception_DS_function.R"))
+
 # Step 2: Data Preparation------------------------------------------------------------------
 # Simulated dataset
 # This creates a simulated dataset with 1000 respondents answering 5 questions (Q1 to Q5). 
