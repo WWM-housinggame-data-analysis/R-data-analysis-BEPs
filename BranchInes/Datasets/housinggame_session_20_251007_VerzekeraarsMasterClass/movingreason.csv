@@ -1,7 +1,0 @@
-id,sequence_number,key,reason_text,is_other,gameversion_id
-32,1,1. House lookout,Like the house lookout,0,13
-33,2,2. Satisfaction,Increase house satisfaction rating,0,13
-34,3,3. Area protection,Relocate to a better protected area,0,13
-35,4,4. House protection,Get a house with better flood protection measures,0,13
-36,5,5. Decrease expenses,Decrease house-related expenses,0,13
-37,6,6. Other,Other,1,13

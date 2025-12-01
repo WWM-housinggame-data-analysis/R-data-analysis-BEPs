@@ -1,7 +1,0 @@
-id,name,initial_satisfaction,initial_money,maximum_mortgage,living_costs,round_income,satisfaction_cost_per_point,preferred_house_rating,scenario_id
-117,Welfare 050,5,0,80000,20000,50000,4000,3,21
-118,Welfare 065,5,5000,110000,30000,65000,6000,4,21
-119,Welfare 080,5,15000,130000,40000,80000,8000,5,21
-120,Welfare 100,5,30000,170000,50000,100000,10000,6,21
-121,Welfare 120,5,50000,200000,65000,120000,13000,7,21
-122,Welfare 180,5,80000,300000,105000,180000,21000,8,21
