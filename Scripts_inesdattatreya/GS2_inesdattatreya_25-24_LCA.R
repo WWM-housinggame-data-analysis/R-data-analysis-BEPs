@@ -1,125 +1,116 @@
-# Step 1: Installing and Load the required Packages ------------------------------------------------------------------
+# Step 1: Data Settings ---------------------------------------------------------------------------------
 # Install, load, set the necessary packages, directories and functions
-library(readxl)
+install.packages("poLCA")
+install.packages("dplyr") 
+install.packages("tidyverse") 
+
+library(poLCA)
 # Load if using RStudio (interactive session)
 library(rstudioapi)
-# Managing datasets
-library(dplyr)
-# Load for excel manipulation
-library(writexl)
-# Load for the latentclass analysis
-library(poLCA)
-# run melt function
-library(reshape2)
-# plot
 library(ggplot2)
+library(reshape2)
 
+install.packages("here")
+install.packages("readxl")
 
+library(here)
+
+library(readxl)
+
+library(readxl)# Load if using RStudio (interactive session)
+library(rstudioapi)
+
+#Step 2: Upload dataset----------------------------------------------------------------------------------
 # Get the path of the current script (works in RStudio)
-# e.g. "~/R data analysis BEPs/Scripts_vjcortesa/functions/vjcortesa_RiskPerception_DataSettings.R"
+# e.g. "~/R data analysis BEPs/Scripts_vjcortesa/GS4_vjcortesa_How is risk perception assessed_library exploration.R"
 script_path <- rstudioapi::getActiveDocumentContext()$path
-# e.g. "~/R data analysis BEPs/Scripts_vjcortesa/functions/"
+# e.g. "~/R data analysis BEPs/Scripts_vjcortesa/"
 scriptfolder_path <- dirname(script_path)
 setwd(scriptfolder_path)
-getwd()
-# Set path to shared folder with the rawdata two directories up
-datasetfolder_path <- file.path(dirname(getwd()),"Datasets")
+print(scriptfolder_path)
 
-##Added
-# Set path to the output directories
-dataoutput_dir <- file.path("data_output", "GS4_25-24_presurveys")
-figoutput_dir <- file.path("fig_output", "GS4_25-24_presurveys")
-
-# Create the subfolder if it doesn't exist
-dir.create(dataoutput_dir, showWarnings = FALSE, recursive = TRUE)
-dir.create(figoutput_dir, showWarnings = FALSE, recursive = TRUE)
-github <- "vjcortesa"
-##End added
-
-# Load required functions
-source(file.path("functions", "vjcortesa_RiskPerception_DS_function.R"))
-
-# Step 2: Data Preparation ------------------------------------------------------------------
-# Set paths to datasets
-presurvey_overview <- file.path(datasetfolder_path,"vjcortesa_Presurvey_questions overview.xlsx") 
-presurvey_settings_240924 <- read_excel(presurvey_overview, sheet = "dataset_240924")
-presurvey_file_240924 <- file.path(datasetfolder_path,"housinggame_session_16_240924_surveys/241108_240924_WhereWeMove sessions - presurvey.xlsx")
-
-presurvey_settings_250923 <- read_excel(presurvey_overview, sheet = "dataset_250923")
-presurvey_file_250923 <- file.path(datasetfolder_path,"housinggame_session_19_250923_surveys/251119_250923_WhereWeMove sessions - presurvey.xlsx")
-
-presurvey_settings_251007 <- read_excel(presurvey_overview, sheet = "dataset_251007")
-presurvey_file_251007 <- file.path(datasetfolder_path,"housinggame_session_20_251007_surveys/251009_251007_WhereWeMove sessions - presurvey.xlsx")
-
-# Extract the risk perception related questions from the pre-surveys
-rp_240924 = riskperception_ds(presurvey_overview, presurvey_file_240924,"dataset_240924")
-rp_250923 = riskperception_ds(presurvey_overview, presurvey_file_250923,"dataset_250923")
-rp_251007 = riskperception_ds(presurvey_overview, presurvey_file_251007,"dataset_251007")
-
-
-# Pick the columns we use for risk perception, which are only the codes of the answers---------------------------------------
-# Function to put the columns to analyse into one
-## Added to handle all data in R
-select_combine_rp_ds <- function(dataset_list) {
-  # Select only the column questions that are in all datasets
-  select_columns <- c(
-    "id",
-    "Q_Experiencecode",
-    "Q_Info_Governmentcode",
-    "Q_Info_WeatherForecastcode",
-    "Q_Info_Scientificcode",
-    "Q_Info_GeneralMediacode",
-    "Q_Info_SocialMediacode",
-    "Q_FloodFuturecode",
-    "Q_ClimateChangecode",
-    "Q_Threatcode")
-  combined_data <- data.frame()  # initialize empty data frame
-  # Select data and convert all columns into a categorical variable except for id to column that remains integer
-  for (ds in dataset_list) {
-    temp_data <- as_tibble(ds) %>%
-      dplyr::select(all_of(select_columns)) %>%
-      mutate(across(-id, as.factor))
-    
-    combined_data <- bind_rows(combined_data, temp_data)
-  }
-  return(combined_data)
-}
-# Make a list with the presurveys to consider for the risk perception analysis
-rp_list <- list(
-  data_240924 = rp_240924,
-  data_250923 = rp_250923,
-  data_251007 = rp_251007
+data <- read_excel(
+  "C:\Users\31613\OneDrive - Delft University of Technology\BEP\R data analysis\BranchInes\Scripts_inesdattatreya\data_output\Risk_Perceptiondataset_240924.xlsx",
+  # vervang door de ECHTE naam van sheet 2
 )
 
-# Run the function to combine the filtered presurvey datasets into one
-# Assign it for the dataset to the analysis
-data_lca <- select_combine_rp_ds(rp_list)
-##End added
+head(data)
+ncol(data)
+
+head(data)
+install.packages("tidyverse")
+library(tidyverse)
+#code to check dataset, nrow() gives the number of respondents
+nrow(data)
+tail(data)
+nrow(data)
+ncol(data)
+colnames(data)
+
+library(poLCA)
+library(dplyr)
+
+# Step 3: Pick the columns we use for risk perception, which are only the codes of the answers---------------------------------------
+data_lca <- data %>%
+  select(
+    id,
+    Q_Experiencecode,
+    Q_Info_Governmentcode,
+    Q_Info_WeatherForecastcode,
+    Q_Info_Scientificcode,
+    Q_Info_GeneralMediacode,
+    Q_Info_SocialMediacode,
+    Q_FloodFuturecode,
+    Q_ClimateChangecode,
+    Q_Threatcode
+  ) %>%
+  # Concert all columns except for id to column
+  mutate(across(-id, as.factor))
 
 # Make a list with all the column names for LCA
 lca_vars <- names(data_lca)[-1]  # alles behalve id
 
-# Step 3: Model Specification------------------------------------------------------------------------------------
+# Check
+str(data_lca)
+
+# Step 4: Model Specification------------------------------------------------------------------------------------
 # Specifying the LCA model with 3 latent classes
-# Combines the nine variables Q1 through Q9 into a matrix of multiple response variables.
+# Combines the five variables Q1 through Q5 into a matrix of multiple response variables.
 # ~ 1: Specifies a model with no preditors (i.e explanatory variables) just a constant (intercept) term."
 # Assigns the resulting formula to the defined variable
+
 f <- as.formula(
   paste("cbind(", paste(sprintf("`%s`", lca_vars), collapse = ", "), ") ~ 1")
 )
 lca_model <- poLCA(f, data_lca, nclass = 3)
 
+
+print(lca_model)
+
 # Start redirecting output to a file
 # paste0() instead of paste() to concatenate strings without space between elements unless added manually
-sink(file.path(dataoutput_dir,paste0(github,"_GS4_25-24_Step3_ModelSpecification_3classes.txt")))
+sink(paste0("data_output/","allsurveyanalysis_Step3.txt"))
 # Printed output
 print("Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/")
-print("Step 3:Model Specification with 3 classes")
+print("Step 3:Model Specification")
 print(lca_model)
 # Stop redirecting output
 sink()
 
-# Step 4: Model Selection between 1 to five classes-------------------------------------------------------------------------------------------
+# Step 5: Estimation Methods----------------------------------------------------------------------------------
+# Fitting the model with multiple random starts
+# This runs the EM algorithm 5 times with different random starts and picks the best one
+# To reduce the risk of getting stuck in a poor solution, poLCA runs the EM algorithm multiple times, each time starting from a different random initialization of the parameters. It then selects the solution with the highest likelihood.
+lca_model <- poLCA(f, data_lca, nclass = 3, nrep = 5)
+sink(paste0("data_output/","allsurveyanlysis_Step4.txt"))
+# Printed output
+print("Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/")
+print("Step 4: Estimation Methods")
+print(lca_model)
+# Stop redirecting output
+sink()
+
+# Step 6: Model Selection-------------------------------------------------------------------------------------------
 # To compare model fit across different numbers of latent classes (nclass = k) the LCA library uses two criteria:
 # BIC (Bayesian Information Criterion)
 # AIC (Akaike Information Criterion)
@@ -140,13 +131,15 @@ for (k in 1:5) {
   aic_values[k] <- lca_model_k$aic
 }
 
-sink(file.path(dataoutput_dir,paste0(github,"_GS425-24_Step4_1to5classes.txt")))
+sink(paste0("data_output/","allsurveyanlysis_Step5.txt"))
 # Printed output
 print("Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/")
-print("Step 5: Model Selection between 1 and 5 classes")
+print("Step 5: Model Selection")
 print(lca_model_k)
 # Stop redirecting output
 sink()
+
+set.seed(123)  # reproduceerbaarheid
 
 # Maak een lijst om modellen op te slaan
 models <- list()
@@ -194,25 +187,30 @@ for (k in 2:5) {
   ))
 }
 
+# Bekijk de tabel in R
+print(fit_table)
+
 # Zorg dat writexl beschikbaar is
 if(!require(writexl)) install.packages("writexl")
 library(writexl)
-print(getwd())
+
 # Absolute pad voor output
-output_dir <- "data_output"
+output_dir <- "C:/Users/31613/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/fig_output"
 
 # Maak de map aan als die nog niet bestaat
-dir.create(dataoutput_dir, showWarnings = FALSE, recursive = TRUE)
+dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Sla CSV op
 write.csv(fit_table,
-          file = file.path(dataoutput_dir, paste0(github,"_GS425-24_Step4_LCA_model_fit_table.csv")),
+          file = file.path(output_dir, "LCA_model_fit_table.csv"),
           row.names = FALSE)
 
 # Save table in excel in figure_output
 write_xlsx(fit_table,
-           path = file.path(dataoutput_dir, paste0(github,"_GS425-24_Step4_LCA_model_fit_table.xlsx")))
+           path = file.path(output_dir, "LCA_model_fit_table.xlsx"))
 
+
+# Step 7: Visualisation----------------------------------------------------------------------------------------
 # Class membership probabilities from step 3
 lca_model$P
 
@@ -241,17 +239,26 @@ plot_lca1 <- function(lca_model) {
             main = paste("Question", i), xlab = "Classes", ylab = "Probability")
   }
 }
-
 # Save as PNG
 # Open an PNG device
+
 #some error with the folder:
 dir.create("fig_output", showWarnings = FALSE)
-png("fig_output/GS4_lca_allsurveysanalysus_ExampleOutput_website.png",
+png("fig_output/GS2_lca_exploration_ExampleOutput_website.png",
     width = 1600, height = 900)
 
 plot_lca1(lca_model)
 
 dev.off()
+
+
+setwd(scriptfolder_path)
+png(paste0("fig_output/","allsurveyanalysis_Output_website.png"), width = 1200, height = 600)
+# Run your plotting function
+plot_lca1(lca_model)
+# Close the device
+dev.off()
+
 
 plot_lca_gg <- function(lca_model, save_path = NULL) {
   probs <- lca_model$probs
@@ -275,7 +282,7 @@ plot_lca_gg <- function(lca_model, save_path = NULL) {
     
     # Save or display
     if (!is.null(save_path)) {
-      ggsave(filename = paste0(save_path, "/GS4_lca_analysis_Question_", i, ".png"), plot = p, width = 8, height = 5)
+      ggsave(filename = paste0(save_path, "/LCA_Question_", i, ".png"), plot = p, width = 8, height = 5)
     } else {
       print(p)
     }
@@ -294,16 +301,9 @@ names(final_model)
 
 # The result of the lca_model function includes:
 # - lca_model$predclass: a vector of predicted class memberships for each respondent, based on the highest posterior probability.
-# Create a complete-case version of data_lca used in the model
-# Added because of the mismatch of one respondent without data i.e. 152 instead of 153
-# This approach is to keep all repondents in the dataset still knowing who was classified
-data_lca$latent_class <- NA
-data_lca$latent_class[complete.cases(data_lca[, all.vars(f)])] <- final_model$predclass
-
-
-# Add latent class predictions
-#data_lca_complete$latent_class <- final_model$predclass
-
+# Now each row (respondent) in survey_data has a new column latent_class indicating 
+data_lca$latent_class <- final_model$predclass
+library(ggplot2)
 
 #PLot met hoeveel respondenten bij welke class horen
 png("fig_output/aantal_respondenten_per_latent_class.png",
@@ -334,6 +334,10 @@ ggplot(df_summary, aes(x = class, y = count, fill = class)) +
 dev.off()
 
 #step 9 one plot with all the questions and classes -------------------------------------
+#prepare data
+library(reshape2)
+library(ggplot2)
+
 # Haal de item-response probabilities
 probs <- lca_model$probs
 
@@ -378,9 +382,12 @@ for (class_name in unique(df_plot$LatentClass)) {
   
   print(p)
 }
-#STEP 10: find out what are the mean answers per class so we can label the classes ------------------------------------------------------------------
 
+#STEP 10: find out what are the mean answers per class so we can label the classes ------------------------------------------------------------------
+library(dplyr)
 # Als je Excel wil opslaan, laad writexl
+if (!require(writexl)) install.packages("writexl")
+library(writexl)
 
 # 1. Bereken welke rijen complete cases zijn in de LCA-items
 complete_idx <- complete.cases(
@@ -422,19 +429,18 @@ mean_table <- data_lca_numeric %>%
 print(mean_table)
 
 # 6. Zorg dat de output-map bestaat
-output_dir <- "data_output"
+output_dir <- "C:/Users/31613/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/fig_output"
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 # 7. Sla de tabel op als CSV en Excel in fig_output
 write.csv(
   mean_table,
-  file = file.path(output_dir, "GS4_mean_scores_per_class.csv"),
+  file = file.path(output_dir, "mean_scores_per_class.csv"),
   row.names = FALSE
 )
 
 write_xlsx(
   mean_table,
-  path = file.path(output_dir, "GS4_allsurveysanalysis/GS4_mean_scores_per_class.xlsx")
+  path = file.path(output_dir, "mean_scores_per_class.xlsx")
 )
-
 
