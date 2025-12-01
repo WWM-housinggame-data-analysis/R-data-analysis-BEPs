@@ -1,0 +1,78 @@
+[1] "Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/"
+[1] "Step 4: Estimation Methods"
+Conditional item response (column) probabilities,
+ by outcome variable, for each class (row) 
+ 
+$Q_Experiencecode
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)  Pr(5)
+class 1:  0.6340 0.0000 0.1478 0.1675 0.0507
+class 2:  0.7283 0.1655 0.0827 0.0236 0.0000
+class 3:  0.5984 0.1489 0.1424 0.0723 0.0380
+
+$Q_Info_Governmentcode
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)  Pr(5)
+class 1:  0.0607 0.3797 0.2544 0.2043 0.1009
+class 2:  0.6234 0.2919 0.0847 0.0000 0.0000
+class 3:  0.4026 0.1567 0.3085 0.1322 0.0000
+
+$Q_Info_WeatherForecastcode
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)  Pr(5)  Pr(6)
+class 1:  0.1164 0.1198 0.0000 0.1062 0.3043 0.3533
+class 2:  0.4487 0.3957 0.1267 0.0159 0.0130 0.0000
+class 3:  0.0946 0.1355 0.3407 0.2592 0.0749 0.0951
+
+$Q_Info_Scientificcode
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)  Pr(5)
+class 1:  0.1726 0.1614 0.3152 0.1994 0.1514
+class 2:  0.7721 0.1765 0.0515 0.0000 0.0000
+class 3:  0.3826 0.2236 0.2788 0.1150 0.0000
+
+$Q_Info_GeneralMediacode
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)  Pr(5)  Pr(6)
+class 1:  0.0000 0.0000 0.1766 0.1556 0.2675 0.4002
+class 2:  0.1505 0.3517 0.3650 0.1327 0.0000 0.0000
+class 3:  0.0384 0.0000 0.2937 0.4821 0.1655 0.0204
+
+$Q_Info_SocialMediacode
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)  Pr(5)  Pr(6)
+class 1:  0.0000 0.0000 0.3377 0.0529 0.2588 0.3506
+class 2:  0.3876 0.2717 0.2515 0.0893 0.0000 0.0000
+class 3:  0.1359 0.1022 0.2718 0.3774 0.0736 0.0391
+
+$Q_FloodFuturecode
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)  Pr(5)
+class 1:  0.5114 0.1528 0.2217 0.1141 0.0000
+class 2:  0.2551 0.4605 0.1333 0.1511 0.0000
+class 3:  0.0677 0.1581 0.2662 0.4509 0.0571
+
+$Q_ClimateChangecode
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)  Pr(5)
+class 1:  0.3001 0.1104 0.2150 0.3745 0.0000
+class 2:  0.0258 0.3437 0.2395 0.3301 0.0608
+class 3:  0.0000 0.1036 0.1079 0.5572 0.2313
+
+$Q_Threatcode
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)  Pr(5)
+class 1:  0.4559 0.2727 0.0489 0.1215 0.1010
+class 2:  0.2383 0.2210 0.4003 0.0901 0.0502
+class 3:  0.0000 0.0000 0.4785 0.5215 0.0000
+
+Estimated class population shares 
+ 0.1303 0.5237 0.3459 
+ 
+Predicted class memberships (by modal posterior prob.) 
+ 0.125 0.5263 0.3487 
+ 
+========================================================= 
+Fit for 3 latent classes: 
+========================================================= 
+number of observations: 152 
+number of estimated parameters: 119 
+residual degrees of freedom: 33 
+maximum log-likelihood: -1762.483 
+ 
+AIC(3): 3762.965
+BIC(3): 4122.807
+G^2(3): 2008.796 (Likelihood ratio/deviance statistic) 
+X^2(3): 1517080 (Chi-square goodness of fit) 
+ 

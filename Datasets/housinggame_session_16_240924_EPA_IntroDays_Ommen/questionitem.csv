@@ -1,0 +1,11 @@
+id,code,name,question_id
+91,1,I won't get flooded,37
+92,2,"If I get flooded, I won't get damaged",37
+93,3,I might suffer minor damage,37
+94,4,I will suffer some damage,37
+95,5,I will get seriously damaged,37
+96,1,Absolutely not confident,38
+97,2,Not confident,38
+98,3,Inconclusive,38
+99,4,Somehow confident,38
+100,5,Absolutely confident,38
