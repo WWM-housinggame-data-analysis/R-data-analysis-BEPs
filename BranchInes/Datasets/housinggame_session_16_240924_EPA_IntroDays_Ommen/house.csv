@@ -1,0 +1,57 @@
+id,price,code,available_round,address,rating,initial_pluvial_protection,initial_fluvial_protection,community_id
+218,425000,N01,1,Stickroad 17,9,0,0,29
+219,200000,N02,4,Twiglane 7,6,1,1,29
+220,425000,N03,4,"Stickroad 21
+
+",9,1,1,29
+221,200000,N04,1,"Twiglane 8
+",6,0,0,29
+222,200000,N05,2,Twiglane 5,6,0,0,29
+223,100000,N06,3,"Leafstreet 28
+
+",3,1,1,29
+224,100000,N07,1,"Leafstreet 26
+",3,0,0,29
+225,300000,D01,1,"Stonelane 13
+",8,0,0,30
+226,300000,D02,2,Stonelane 11,8,0,0,30
+227,300000,D03,3,"Stonelane 15
+
+",8,0,0,30
+228,160000,D04,1,"Steelstreet 22
+",5,0,0,30
+229,160000,D05,1,"Steelstreet 20
+",5,0,0,30
+230,160000,D06,3,"Steelstreet 25
+
+",5,1,0,30
+231,160000,D07,4,"Steelstreet 23
+
+",5,1,2,30
+232,80000,D08,4,"Brickroad 8
+
+",2,1,2,30
+233,80000,D09,2,Brickroad 4,2,0,0,30
+234,80000,D10,1,"Brickroad 6
+",2,0,0,30
+235,200000,U01,1,"Woolstreet 33
+",6,0,0,31
+236,200000,U02,3,"Woolstreet 37
+
+",6,0,1,31
+237,200000,U03,4,"Woolstreet 35
+
+",6,1,1,31
+238,125000,U04,1,"Grassroad 54
+",4,0,0,31
+239,125000,U05,2,Grassroad 52,4,0,0,31
+240,125000,U06,3,"Grassroad 51
+
+",4,1,1,31
+241,125000,U07,3,Grassroad 53,4,1,2,31
+242,70000,U08,4,"Twiglane 46
+
+",2,1,2,31
+243,70000,U09,2,Twiglane 44,2,0,0,31
+244,70000,U10,1,"Twiglane 48
+",2,0,0,31
