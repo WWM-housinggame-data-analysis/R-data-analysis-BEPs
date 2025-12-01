@@ -1,7 +1,0 @@
-id,name,initial_satisfaction,initial_money,maximum_mortgage,living_costs,round_income,satisfaction_cost_per_point,preferred_house_rating,scenario_id
-123,Welfare 060=(50 +10 Income) +10 Living costs,5,0,80000,30000,60000,4000,3,22
-124,Welfare 075=(65 +10 Income) +10 Living costs+5sat,5,5000,110000,40000,75000,6000,4,22
-125,Welfare 090=(80 +10 Income) +10 Living costs+5sat,5,15000,130000,50000,90000,8000,5,22
-126,Welfare 110=(100 +10 Income) +10 Living costs+5sat,5,30000,170000,60000,110000,10000,6,22
-127,Welfare 130=(120 +10 Income) +10 Living costs+5sat,5,50000,200000,75000,130000,13000,7,22
-128,Welfare 190=(180 +10 Income) +10 Living costs+5sat,5,80000,300000,115000,190000,21000,8,22
