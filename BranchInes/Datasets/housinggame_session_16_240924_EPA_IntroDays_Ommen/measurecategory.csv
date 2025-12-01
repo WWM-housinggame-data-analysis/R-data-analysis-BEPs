@@ -1,0 +1,4 @@
+id,name,description,explanation,scenario_id,sequence_nr
+15,Flood adaptation,(costs are the same for all players),These are measures related to the house the player is living in.,21,1.0
+16,Satisfaction measures,Satisfaction measures,,21,2.0
+17,Insurance measures,Insurance measures,Insurance for both flood and rain damage.,21,3.0

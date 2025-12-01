@@ -1,0 +1,115 @@
+<<<<<<< HEAD
+[1] "Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/"
+[1] "Step 3:Model Specification"
+Conditional item response (column) probabilities,
+ by outcome variable, for each class (row) 
+ 
+$Q1
+           Pr(1)  Pr(2)  Pr(3)
+class 1:  0.2480 0.4188 0.3332
+class 2:  0.3746 0.3205 0.3050
+class 3:  0.3310 0.2679 0.4011
+
+$Q2
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)
+class 1:  0.1712 0.0517 0.5381 0.2390
+class 2:  0.2215 0.2758 0.2750 0.2278
+class 3:  0.3626 0.3964 0.0000 0.2409
+
+$Q3
+           Pr(1)  Pr(2)  Pr(3)
+class 1:  0.3559 0.2420 0.4020
+class 2:  0.2997 0.2923 0.4079
+class 3:  0.3595 0.3989 0.2416
+
+$Q4
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)
+class 1:  0.2073 0.5334 0.0097 0.2497
+class 2:  0.2022 0.0474 0.5650 0.1853
+class 3:  0.3243 0.3391 0.0019 0.3346
+
+$Q5
+           Pr(1)  Pr(2)  Pr(3)
+class 1:  0.2819 0.3847 0.3334
+class 2:  0.3308 0.3066 0.3625
+class 3:  0.3138 0.4112 0.2750
+
+Estimated class population shares 
+ 0.2754 0.4101 0.3144 
+ 
+Predicted class memberships (by modal posterior prob.) 
+ 0.245 0.311 0.444 
+ 
+========================================================= 
+Fit for 3 latent classes: 
+========================================================= 
+number of observations: 1000 
+number of estimated parameters: 38 
+residual degrees of freedom: 393 
+maximum log-likelihood: -6044.248 
+ 
+AIC(3): 12164.5
+BIC(3): 12350.99
+G^2(3): 462.2892 (Likelihood ratio/deviance statistic) 
+X^2(3): 397.0556 (Chi-square goodness of fit) 
+ 
+ALERT: iterations finished, MAXIMUM LIKELIHOOD NOT FOUND 
+ 
+=======
+[1] "Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/"
+[1] "Step 3:Model Specification"
+Conditional item response (column) probabilities,
+ by outcome variable, for each class (row) 
+ 
+$Q1
+           Pr(1)  Pr(2)  Pr(3)
+class 1:  0.2480 0.4188 0.3332
+class 2:  0.3746 0.3205 0.3050
+class 3:  0.3310 0.2679 0.4011
+
+$Q2
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)
+class 1:  0.1712 0.0517 0.5381 0.2390
+class 2:  0.2215 0.2758 0.2750 0.2278
+class 3:  0.3626 0.3964 0.0000 0.2409
+
+$Q3
+           Pr(1)  Pr(2)  Pr(3)
+class 1:  0.3559 0.2420 0.4020
+class 2:  0.2997 0.2923 0.4079
+class 3:  0.3595 0.3989 0.2416
+
+$Q4
+           Pr(1)  Pr(2)  Pr(3)  Pr(4)
+class 1:  0.2073 0.5334 0.0097 0.2497
+class 2:  0.2022 0.0474 0.5650 0.1853
+class 3:  0.3243 0.3391 0.0019 0.3346
+
+$Q5
+           Pr(1)  Pr(2)  Pr(3)
+class 1:  0.2819 0.3847 0.3334
+class 2:  0.3308 0.3066 0.3625
+class 3:  0.3138 0.4112 0.2750
+
+Estimated class population shares 
+ 0.2754 0.4101 0.3144 
+ 
+Predicted class memberships (by modal posterior prob.) 
+ 0.245 0.311 0.444 
+ 
+========================================================= 
+Fit for 3 latent classes: 
+========================================================= 
+number of observations: 1000 
+number of estimated parameters: 38 
+residual degrees of freedom: 393 
+maximum log-likelihood: -6044.248 
+ 
+AIC(3): 12164.5
+BIC(3): 12350.99
+G^2(3): 462.2892 (Likelihood ratio/deviance statistic) 
+X^2(3): 397.0556 (Chi-square goodness of fit) 
+ 
+ALERT: iterations finished, MAXIMUM LIKELIHOOD NOT FOUND 
+ 
+>>>>>>> 75f9a7f8401cff40f0d72cfc713cf9c05ac85061

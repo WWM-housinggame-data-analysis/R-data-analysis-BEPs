@@ -1,0 +1,17 @@
+id,name,languagegroup_id,description
+13,Game Version 2025-09 English,1,"Board: Lowered flood protection from round 1 onward.
+Adjusted news messages.
+
+Welfares: 065, 080, 095, 115, 135, 195. Increase initial satisfaction.
+Houses
+U09, U05, D09, D02, N05 available in R1
+U02, D06, D03, N06 available in R4
+N02 & U07, removed water pump so -1 in rainfall protection.
+D06, instead of installing a water pump, self-activating flood wall and water-resistant walls & floors
+Measures: 
+Remove water pump installation
+Water-resistant walls & underground rain barrel 15Euro. Self-activating flood wall 20k.
+Adjusted price of flood insurance and protection for both rain and river.
+Session
+2509 EPA
+2510 Insurances"
