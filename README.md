@@ -48,7 +48,31 @@ Then follow these steps:
 
 7. If the changes you did are now saved in your Github fork repository, and if you want to update the upstream repository [WWM-housinggame-data-analysis/R-data-analysis-BEPs](https://github.com/WWM-housinggame-data-analysis/R-data-analysis-BEPs) with those changes, you can do so by doing a [pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork) to push the changes from your fork to ([WWM-housinggame-data-analysis/R-data-analysis-BEPs](https://github.com/WWM-housinggame-data-analysis/R-data-analysis-BEPs)).
 
-
+8. Workaround procedure
+git add .
+git commit -m "write message"
+git push
+ 
+there is a message asking for git pull
+ 
+git pull
+ 
+there is a message complaining about a conflict and merge needs to happen
+ 
+git status
+ 
+git add .
+ 
+git commit
+ 
+you are directed to the scary git file
+ 
+just write :wq
+ 
+you are back in the terminal
+ 
+just right git push
+ 
 ### Have you already contributed before?
 
 Then follow these steps to add your progress to the repository:
