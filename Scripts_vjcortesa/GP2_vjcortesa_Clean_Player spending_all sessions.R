@@ -25,12 +25,12 @@ setwd(scriptfolder_path)
 functionfolder_path <- file.path(scriptfolder_path,"functions")
 dataset_path <- file.path(dirname(scriptfolder_path),"Datasets")
 # Set path to the output directories
-data_output_path <- file.path("data_output", "GS2_25-24_sessions")
+data_output_path <- file.path("data_output", "GP2_income_25-24_sessions")
 # Create the folder automatically if it doesn't exist
 if (!dir.exists(data_output_path)) {
   dir.create(data_output_path, recursive = TRUE)
 }
-fig_output_path <- file.path("fig_output", "GS2_25-24_sessions")
+fig_output_path <- file.path("fig_output", "GP2_income_25-24_sessions")
 # Create the folder automatically if it doesn't exist
 if (!dir.exists(fig_output_path)) {
   dir.create(fig_output_path, recursive = TRUE)
@@ -63,7 +63,10 @@ combine_csvs_to_excel(dataset_path,session_2409)
 # Checks for possible errors in the spendable income calculation
 
 # Select the relevant tables for the income distribution
-GP2_tables <- c("gamesession", "group", "groupround", "playerround", "player","measuretype","personalmeasure","housemeasure", "housegroup")
+GP2_tables <- c("gamesession", "group", "groupround", 
+                "playerround", "player","measuretype",
+                "personalmeasure","housemeasure", "housegroup",
+                "house","initialhousemeasure")
 
 # Select the variables for the income distribution plot
 var_income_dist <- c(
