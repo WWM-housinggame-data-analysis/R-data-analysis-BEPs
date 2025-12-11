@@ -33,6 +33,8 @@ income_dist_table <- function(csv_list_2510 = "dataset list", GP2_tables = "tabl
   personalmeasure <- GP2_data[["personalmeasure"]]
   housemeasure <- GP2_data[["housemeasure"]]
   housegroup <- GP2_data[["housegroup"]]
+  house <- GP2_data[["house"]]
+  initialhousemeasure <- GP2_data[["initialhousemeasure"]]
   
   # Rename the session name variable in the dataframe to avoid name overlap with the group name variable
   gamesession <- sqldf("SELECT * FROM gamesession")
@@ -127,7 +129,7 @@ income_dist_table <- function(csv_list_2510 = "dataset list", GP2_tables = "tabl
   personalmeasure$calculated_costs <- 
     personalmeasure$cost_absolute + 
     (personalmeasure$cost_percentage_income/100)*personalmeasure$round_income + 
-    (personalmeasure$cost_percentage_house/100)*personalmeasure$mortgage_payment*10
+    (personalmeasure$cost_percentage_house/100)*personalmeasure$last_sold_price
   
   head(personalmeasure)
   #calculate the cumulative of the personal measures to compare it against the cost of house measures bought
@@ -168,7 +170,7 @@ income_dist_table <- function(csv_list_2510 = "dataset list", GP2_tables = "tabl
   ORDER BY pr.player_code ASC
 ")
   
-  # Add to the measuretype selection to compare it with the costs of measures per round
+  # Add the measuretype variables to calculate the costs of house measures per round 
   housemeasure <- sqldf("
   SELECT hm.*, m.short_alias, m.cost_absolute, m.satisfaction_delta_once, m.pluvial_protection_delta, m.fluvial_protection_delta
   FROM [housemeasure] AS hm
@@ -177,15 +179,52 @@ income_dist_table <- function(csv_list_2510 = "dataset list", GP2_tables = "tabl
   ORDER BY hm.player_code ASC
 ")
   
+  # Add to the initialhouse measure the house code to identify in the housemeasure table which houses had measures already implemented
+  initialhousemeasure <- sqldf("
+  SELECT ihm.*, h.code AS house_code, h.rating, h.initial_pluvial_protection, h.initial_fluvial_protection, h.community_id
+  FROM [initialhousemeasure] AS ihm
+  LEFT JOIN [house] AS h
+  ON ihm.house_id = h.id
+  ORDER BY ihm.house_id ASC
+")
+  
+  # Add to the initialhouse measure the house code to identify in the housemeasure table which houses had measures already implemented
+  initialhousemeasure <- sqldf("
+  SELECT ihm.*, m.short_alias 
+  FROM [initialhousemeasure] AS ihm
+  LEFT JOIN [measuretype] AS m
+  ON ihm.measuretype_id = m.id
+  ORDER BY ihm.house_id ASC
+")
+  
+  # Add the measuretype variables to calculate the costs of house measures per round 
+  housemeasure <- sqldf("
+  SELECT 
+    hm.*,
+    CASE 
+      WHEN EXISTS (
+        SELECT TRUE FROM [initialhousemeasure] AS ihm
+        WHERE ihm.measuretype_id = hm.measuretype_id
+          AND ihm.house_code = hm.house_code
+      )
+      THEN TRUE ELSE FALSE
+    END AS initialhousemeasure
+  FROM [housemeasure] AS hm
+")
+  
   #calculate the cumulative of the personal measures to compare it against the cost of house measures bought
   housemeasure_cumulative <- housemeasure %>%
     arrange(player_code, groupround_round_number) %>%   # ensure proper order
     group_by(player_code, groupround_round_number) %>%  # group by player and round
     #add up costs within each round for each player (since you may have multiple rows per round)
-    summarise(calculated_costs_house_measures = sum(cost_absolute),# sum across rows in the round
-              total_bought_measures = first(cost_house_measures_bought), # keep the round’s value
-              .groups = "drop"
-    ) %>% 
+    summarise(
+      # sum only cost_absolute where initialhousemeasure == FALSE
+      calculated_costs_house_measures = sum(
+        ifelse(initialhousemeasure, 0, cost_absolute)
+      ),
+      total_bought_measures = first(cost_house_measures_bought), # keep the round’s value
+      .groups = "drop"
+    ) %>%
     #ensure cumulative totals are calculated separately for each player
     mutate(
       difference = calculated_costs_house_measures - total_bought_measures
@@ -215,15 +254,15 @@ income_dist_table <- function(csv_list_2510 = "dataset list", GP2_tables = "tabl
   ORDER BY pr.player_code ASC
 ")
   if (dataset_date == "2409") {
-  playerround$calculated_costs_difference <- playerround$cost_house_measures_bought - 
+  playerround$calculated_costs_measures_difference <- playerround$cost_house_measures_bought - 
     (playerround$calculated_costs_personal_measures + playerround$calculated_costs_house_measures)
   } else {
-    playerround$calculated_costs_difference <- (playerround$cost_house_measures_bought +  playerround$cost_personal_measures_bought) - 
+    playerround$calculated_costs_measures_difference <- (playerround$cost_house_measures_bought +  playerround$cost_personal_measures_bought) - 
       (playerround$calculated_costs_personal_measures + playerround$calculated_costs_house_measures)
   }
   # Filter the playerround dataset for the income distribution
   ## Add the new calculated columns for the measures costs
-  new_vars <- c("calculated_costs_personal_measures", "calculated_costs_house_measures", "calculated_costs_difference")
+  new_vars <- c("calculated_costs_personal_measures", "calculated_costs_house_measures", "calculated_costs_measures_difference")
   var_income_dist <- c(var_income_dist, new_vars)
 
 #  Collapse the column vector into a comma-separated string
@@ -269,6 +308,8 @@ income_dist_table <- function(csv_list_2510 = "dataset list", GP2_tables = "tabl
     measuretype = measuretype,
     personalmeasure = personalmeasure,
     housemeasure = housemeasure,
+    initialhousemeasure = initialhousemeasure,
+    house = house,
     housegroup = housegroup,
     group = group,
     groupround = groupround,
