@@ -63,10 +63,7 @@ combine_csvs_to_excel(dataset_path,session_2409)
 # Checks for possible errors in the spendable income calculation
 
 # Select the relevant tables for the income distribution
-GP2_tables <- c("gamesession", "group", "groupround", 
-                "playerround", "player","measuretype",
-                "personalmeasure","housemeasure", "housegroup",
-                "house","initialhousemeasure")
+GP2_tables <- c("gamesession", "group", "groupround", "playerround", "player","measuretype","personalmeasure","housemeasure", "housegroup")
 
 # Select the variables for the income distribution plot
 var_income_dist <- c(
@@ -94,8 +91,6 @@ measuretype <- csv_list_2409[["measuretype"]]
 personalmeasure <- csv_list_2409[["personalmeasure"]]
 housemeasure <- csv_list_2409[["housemeasure"]]
 housegroup <- csv_list_2409[["housegroup"]]
-house <- csv_list_2409[["house"]]
-initialhousemeasure <- csv_list_2409[["initialhousemeasure"]]
 
 # Rename the session name variable in the dataframe to avoid name overlap with the group name variable
 gamesession <- sqldf("SELECT * FROM gamesession")
@@ -170,7 +165,7 @@ var_to_plot <- data.frame(
 
 # Testing the plot function
 # plot_check <- income_dist_plot(dataset, group, round, players, welfare_classes,var_to_plot) 
-
+#print(plot_check)
 # Calcule the reference dataset with all players average
 ## mapply safely substracts ingnoring NAs in either column 
 ## na.rm = TRUE remove or ignore NA (missing) values when performing calculations.

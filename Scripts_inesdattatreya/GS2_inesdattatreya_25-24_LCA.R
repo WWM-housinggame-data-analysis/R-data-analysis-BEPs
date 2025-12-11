@@ -30,14 +30,10 @@ setwd(scriptfolder_path)
 print(scriptfolder_path)
 
 data <- read_excel(
-  "C:\Users\31613\OneDrive - Delft University of Technology\BEP\R data analysis\BranchInes\Scripts_inesdattatreya\data_output\Risk_Perceptiondataset_240924.xlsx",
-  # vervang door de ECHTE naam van sheet 2
-)
+  "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Datasets/Riskperceptiondataset_201125.xlsx")
 
-head(data)
-ncol(data)
 
-head(data)
+
 install.packages("tidyverse")
 library(tidyverse)
 #code to check dataset, nrow() gives the number of respondents
@@ -49,6 +45,7 @@ colnames(data)
 
 library(poLCA)
 library(dplyr)
+select <- dplyr::select
 
 # Step 3: Pick the columns we use for risk perception, which are only the codes of the answers---------------------------------------
 data_lca <- data %>%
@@ -66,6 +63,14 @@ data_lca <- data %>%
   ) %>%
   # Concert all columns except for id to column
   mutate(across(-id, as.factor))
+
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+
+
+
 
 # Make a list with all the column names for LCA
 lca_vars <- names(data_lca)[-1]  # alles behalve id
@@ -87,28 +92,52 @@ lca_model <- poLCA(f, data_lca, nclass = 3)
 
 print(lca_model)
 
+#I put the path manual because my laptop crashed and I am on my roommates
+#laptop
+
+output_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/data_output"
+dir.create(output_dir, showWarnings = FALSE)
+
+sink(file.path(output_dir, "allsurveyanalysis_Step3.txt"))
+print(lca_model)
+sink()
+
+
 # Start redirecting output to a file
 # paste0() instead of paste() to concatenate strings without space between elements unless added manually
-sink(paste0("data_output/","allsurveyanalysis_Step3.txt"))
+#sink(paste0("data_output/","allsurveyanalysis_Step3.txt"))
 # Printed output
-print("Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/")
-print("Step 3:Model Specification")
-print(lca_model)
+#print("Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/")
+#print("Step 3:Model Specification")
+#print(lca_model)
 # Stop redirecting output
-sink()
+#sink()
 
 # Step 5: Estimation Methods----------------------------------------------------------------------------------
 # Fitting the model with multiple random starts
 # This runs the EM algorithm 5 times with different random starts and picks the best one
 # To reduce the risk of getting stuck in a poor solution, poLCA runs the EM algorithm multiple times, each time starting from a different random initialization of the parameters. It then selects the solution with the highest likelihood.
-lca_model <- poLCA(f, data_lca, nclass = 3, nrep = 5)
-sink(paste0("data_output/","allsurveyanlysis_Step4.txt"))
+#lca_model <- poLCA(f, data_lca, nclass = 3, nrep = 5)
+#sink(paste0("data_output/","allsurveyanlysis_Step4.txt"))
 # Printed output
-print("Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/")
-print("Step 4: Estimation Methods")
-print(lca_model)
+#print("Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/")
+#print("Step 4: Estimation Methods")
+#print(lca_model)
 # Stop redirecting output
+#sink()
+
+
+#again I use this code because I changed laptop
+output_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/data_output"
+
+dir.create(output_dir, showWarnings = FALSE)
+
+sink(file.path(output_dir, "Step 4: Estimation Methods"))
+print(lca_model)
 sink()
+
+
+
 
 # Step 6: Model Selection-------------------------------------------------------------------------------------------
 # To compare model fit across different numbers of latent classes (nclass = k) the LCA library uses two criteria:
@@ -131,20 +160,24 @@ for (k in 1:5) {
   aic_values[k] <- lca_model_k$aic
 }
 
-sink(paste0("data_output/","allsurveyanlysis_Step5.txt"))
+#sink(paste0("data_output/","allsurveyanlysis_Step5.txt"))
 # Printed output
-print("Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/")
-print("Step 5: Model Selection")
-print(lca_model_k)
+#print("Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/")
+#print("Step 5: Model Selection")
+#print(lca_model_k)
 # Stop redirecting output
+#sink()
+
+sink(file.path(output_dir, "allsurveyanlysis_Step5.txt"))
+print(lca_model)
 sink()
 
 set.seed(123)  # reproduceerbaarheid
 
-# Maak een lijst om modellen op te slaan
+# Make a list to save all the models 
 models <- list()
 
-# Fit modellen met 2,3,4,5 klassen
+# Fit models with 2,3,4 or 5 classes
 for (k in 2:5) {
   models[[paste0("Class_", k)]] <- poLCA(
     f,
@@ -155,10 +188,10 @@ for (k in 2:5) {
   )
 }
 
-# Functie om Entropy te berekenen
+# Calculate the Entropy 
 calc_entropy <- function(model) {
   posterior <- model$posterior
-  posterior <- posterior + 1e-10   # voorkomt log(0)
+  posterior <- posterior + 1e-10   # avoids log(0)
   n <- nrow(posterior)
   K <- ncol(posterior)
   E <- -sum(posterior * log(posterior)) / n / log(K)
@@ -187,20 +220,18 @@ for (k in 2:5) {
   ))
 }
 
-# Bekijk de tabel in R
+# visualise table in R
 print(fit_table)
 
-# Zorg dat writexl beschikbaar is
+# Make sure writexl is available
 if(!require(writexl)) install.packages("writexl")
 library(writexl)
 
-# Absolute pad voor output
-output_dir <- "C:/Users/31613/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/fig_output"
+output_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/fig_output"
 
-# Maak de map aan als die nog niet bestaat
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
-# Sla CSV op
+# Save CSV 
 write.csv(fit_table,
           file = file.path(output_dir, "LCA_model_fit_table.csv"),
           row.names = FALSE)
@@ -213,6 +244,14 @@ write_xlsx(fit_table,
 # Step 7: Visualisation----------------------------------------------------------------------------------------
 # Class membership probabilities from step 3
 lca_model$P
+
+#make a colour scheme to set colours for different classes
+class_cols <- c(
+  "Class 1" = "#777777",   # grijs
+  "Class 2" = "#8A0000",   # donkerrood
+  "Class 3" = "#FF6666"    # lichtrood
+)
+
 
 # Item-response probabilities from step 3
 lca_model$probs
@@ -235,7 +274,7 @@ plot_lca1 <- function(lca_model) {
     #probs[[i]]: the matrix of item-response probabilities for class i.
     #beside = TRUE: plots bars side-by-side (not stacked).
     
-    barplot(t(as.matrix(probs[[i]])), beside = TRUE, col = rainbow(ncol(probs[[i]])),
+    barplot(t(as.matrix(probs[[i]])), beside = TRUE, col = class_cols[1:ncol(probs[[i]])],
             main = paste("Question", i), xlab = "Classes", ylab = "Probability")
   }
 }
@@ -251,6 +290,7 @@ plot_lca1(lca_model)
 
 dev.off()
 
+scriptfolder_path <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya"
 
 setwd(scriptfolder_path)
 png(paste0("fig_output/","allsurveyanalysis_Output_website.png"), width = 1200, height = 600)
@@ -259,21 +299,44 @@ plot_lca1(lca_model)
 # Close the device
 dev.off()
 
+install.packages("reshape2")
+library(reshape2)
 
+##  code with colour scheme:
 plot_lca_gg <- function(lca_model, save_path = NULL) {
+  library(ggplot2)
+  library(reshape2)
+  
   probs <- lca_model$probs
   num_classes <- length(probs)
+  
+  # kleurenschaal van lichtrood naar donkerrood
+  response_cols <- c(
+    "#FFCCCC",
+    "#FF9999",
+    "#FF6666",
+    "#FF3333",
+    "#CC0000",
+    "#800000"
+  )
   
   for (i in 1:num_classes) {
     # Convert class matrix to long format
     class_matrix <- as.matrix(probs[[i]])
     df <- as.data.frame(class_matrix)
     df$Question <- paste0("Class", 1:nrow(df))
-    df_long <- melt(df, id.vars = "Question", variable.name = "Response", value.name = "Probability")
+    
+    df_long <- melt(
+      df, 
+      id.vars = "Question",
+      variable.name = "Response",
+      value.name = "Probability"
+    )
     
     # Create ggplot
     p <- ggplot(df_long, aes(x = Question, y = Probability, fill = Response)) +
       geom_bar(stat = "identity", position = "dodge") +
+      scale_fill_manual(values = response_cols) +        # <<< HIER ZIT JE KLEURENPALET
       labs(title = paste("Item-Response Probabilities - Question", i),
            x = "Classes",
            y = "Response Probability") +
@@ -282,7 +345,8 @@ plot_lca_gg <- function(lca_model, save_path = NULL) {
     
     # Save or display
     if (!is.null(save_path)) {
-      ggsave(filename = paste0(save_path, "/LCA_Question_", i, ".png"), plot = p, width = 8, height = 5)
+      ggsave(filename = paste0(save_path, "/LCA_Question_", i, ".png"),
+             plot = p, width = 8, height = 5)
     } else {
       print(p)
     }
@@ -295,6 +359,33 @@ plot_lca_gg(lca_model, save_path = "fig_output")
 # Step 8: Data categorisation------------------------------------------------------------------
 # Increase nrep to 10 or more to ensure stability and avoid local maxim
 final_model <- poLCA(f, data_lca, nclass = 3, nrep = 10)
+
+
+
+# Step 8: Data categorisation------------------------------------------------------------------
+# Increase nrep to 10 or more to ensure stability and avoid local maxim
+final_model <- poLCA(f, data_lca, nclass = 3, nrep = 10)
+
+
+# add latent class to excel 
+
+# make an empty column for NAs
+data_lca$class <- NA
+
+# Bepaal hoeveel classes beschikbaar zijn
+n_class <- length(final_model$predclass)
+
+data_lca$class[1:n_class] <- factor(final_model$predclass,
+                                    levels = 1:3,
+                                    labels = c("class 1", "class 2", "class 3"))
+
+# see results
+head(data_lca[, c("id", "class")], 20)  # 20 rijen bekijken om te checken
+
+# Save to Excel
+library(writexl)
+
+
 #print((final_model$predclass))
 #print(nrow(survey_data))
 names(final_model)
@@ -302,16 +393,22 @@ names(final_model)
 # The result of the lca_model function includes:
 # - lca_model$predclass: a vector of predicted class memberships for each respondent, based on the highest posterior probability.
 # Now each row (respondent) in survey_data has a new column latent_class indicating 
-data_lca$latent_class <- final_model$predclass
+final_model$data$latent_class <- final_model$predclass
 library(ggplot2)
 
-#PLot met hoeveel respondenten bij welke class horen
+
+
+
+
+
+
+#PLot how many respondents belong to every class
 png("fig_output/aantal_respondenten_per_latent_class.png",
     width = 1600, height = 900)
-# 1. Haal class probabilities uit je model
+#get class probabilities from the model
 class_probs <- lca_model$P  # vector van proporties per klasse
 
-# 2. Zet om naar dataframe voor ggplot
+# convert to dataframe for ggplot
 df_class <- data.frame(
   class = factor(lca_model$predclass)  # factor zodat ggplot mooie labels maakt
 )
@@ -319,7 +416,7 @@ df_class <- data.frame(
 df_summary <- as.data.frame(table(df_class$class))
 colnames(df_summary) <- c("class", "count")
 
-# 4. Maak een barplot
+# make a barplot
 ggplot(df_summary, aes(x = class, y = count, fill = class)) +
   geom_bar(stat = "identity") +
   geom_text(aes(label = count), vjust = -0.5) +
@@ -338,50 +435,95 @@ dev.off()
 library(reshape2)
 library(ggplot2)
 
-# Haal de item-response probabilities
 probs <- lca_model$probs
 
-# Zet alles om naar long format
+# Vector with question names
+vraag_namen <- c(
+  "QExperience",
+  "QInfo_Government",
+  "QInfo_WeatherForecast",
+  "QInfo_Scientific",
+  "QInfo_GeneralMedia",
+  "QInfo_SocialMedia",
+  "QFloodFuture",
+  "QClimateChange",
+  "QThreat"
+)
+
+# empyty list to save dataframes
 df_list <- list()
-for (i in 1:length(probs)) {
+
+# Loop over indices van de vragen
+for (i in seq_along(vraag_namen)) {
   class_matrix <- as.matrix(probs[[i]])
   df <- as.data.frame(class_matrix)
-  df$LatentClass <- paste0("Class ", 1:nrow(class_matrix))
-  df$Question <- paste0("Q", i)
   
+  df$LatentClass <- paste0("Class ", 1:nrow(class_matrix))
+  
+  # Uses names from the vector
+  df$Question <- vraag_namen[i]
   df_long <- melt(df, id.vars = c("LatentClass", "Question"),
                   variable.name = "Response",
                   value.name = "Probability")
   
   df_list[[i]] <- df_long
+  
+
 }
 
-# Combineer alle vragen
-#makte plot
-df_plot <- do.call(rbind, df_list)
 
-# Voor elke latent class een aparte plot
-for (class_name in unique(df_plot$LatentClass)) {
-  df_class <- df_plot[df_plot$LatentClass == class_name, ]
-  
-  p <- ggplot(df_class, aes(x = Question, y = Probability, fill = Response)) +
-    geom_bar(stat = "identity", position = "dodge") +
-    labs(title = paste("Item-Response Profile -", class_name),
-         x = "Vraag",
-         y = "Probability") +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  # ⬇️ Opslaan in fig_output map
-  ggsave(
-    filename = paste0("fig_output/all_questions_together_", class_name, ".png"),
-    plot = p,
-    width = 10,
-    height = 6,
-    dpi = 300
-  )
-  
-  print(p)
-}
+
+
+
+
+
+
+
+# Zet alles om naar long format
+
+
+df_list <- list()
+ for (i in 1:length(probs)) {
+   class_matrix <- as.matrix(probs[[i]])
+   df <- as.data.frame(class_matrix)
+   df$LatentClass <- paste0("Class ", 1:nrow(class_matrix))
+   df$Question <- paste0("Q", i)
+
+   df_long <- melt(df, id.vars = c("LatentClass", "Question"),
+                   variable.name = "Response",
+                   value.name = "Probability")
+
+   df_list[[i]] <- df_long
+ }
+
+
+# Combine all questions: plot by Q1, Q2, Q3 etc
+
+ df_plot <- do.call(rbind, df_list)
+# 
+# 
+# for every latent class a different plot
+ for (class_name in unique(df_plot$LatentClass)) {
+   df_class <- df_plot[df_plot$LatentClass == class_name, ]
+   
+   p <- ggplot(df_class, aes(x = Question, y = Probability, fill = Response)) +
+     geom_bar(stat = "identity", position = "dodge") +
+     labs(title = paste("Item-Response Profile -", class_name),
+          x = "Vraag",
+          y = "Probability") +
+     theme_minimal() +
+     theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#   # 
+   ggsave(
+     filename = paste0("fig_output/all_questions_together_", class_name, ".png"),
+     plot = p,
+     width = 10,
+     height = 6,
+     dpi = 300
+   )
+#   
+   print(p)
+ }
 
 #STEP 10: find out what are the mean answers per class so we can label the classes ------------------------------------------------------------------
 library(dplyr)
@@ -389,7 +531,12 @@ library(dplyr)
 if (!require(writexl)) install.packages("writexl")
 library(writexl)
 
-# 1. Bereken welke rijen complete cases zijn in de LCA-items
+
+# Calculate which rows are complete cases for the LCA items
+# A "complete case" is a respondent who has no missing values (NA) 
+# in any of the specified LCA columns. 
+# complete.cases() returns a logical vector: TRUE if all columns have values, FALSE if any are missing.
+
 complete_idx <- complete.cases(
   data_lca[, c(
     "Q_Experiencecode",
@@ -404,19 +551,20 @@ complete_idx <- complete.cases(
   )]
 )
 
-# 2. Voeg latent class toe (alleen voor de complete cases)
+
+# add latent class (only for the complete cases)
 data_lca$class <- NA
 data_lca$class[complete_idx] <- lca_model$predclass
 data_lca$class <- factor(data_lca$class)
 
-# 3. Zet je code-kolommen om naar numeriek (zodat je gemiddelden kunt berekenen)
+# concert code columns to numeric (so the mean can be calculated)
 data_lca_numeric <- data_lca %>%
   mutate(across(
     Q_Experiencecode:Q_Threatcode,
     ~ as.numeric(as.character(.))
   ))
 
-# 4. Bereken per class het gemiddelde van elke code-vraag
+# calculate mean for every question
 mean_table <- data_lca_numeric %>%
   group_by(class) %>%
   summarise(across(
@@ -425,11 +573,86 @@ mean_table <- data_lca_numeric %>%
     na.rm = TRUE
   ))
 
-# 5. Print de tabel in R, zodat je het kunt controleren
+#we also want to calculate the standard deviation:
+stats_table <- data_lca_numeric %>%
+  group_by(class) %>%
+  summarise(across(
+    Q_Experiencecode:Q_Threatcode,
+    list(mean = ~ mean(.x, na.rm = TRUE),
+         sd   = ~ sd(.x, na.rm = TRUE)),
+    .names = "{col}_{fn}"
+  ))
+library(tidyr)
+
+stats_long <- stats_table %>%
+  pivot_longer(
+    cols = -class,
+    names_to = c("Question", ".value"),
+    names_pattern = "^(.*)_(mean|sd)$"
+  )
+
+
+print(stats_long)
 print(mean_table)
 
-# 6. Zorg dat de output-map bestaat
-output_dir <- "C:/Users/31613/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/fig_output"
+#make a plot for every class you can see the mean and standarddeviation per question
+
+library(ggplot2)
+
+ggplot(stats_long, aes(x = mean, y = Question)) +
+  geom_point(size = 3, aes(color = class)) +
+  geom_errorbarh(aes(xmin = mean - sd, xmax = mean + sd, color = class), height = 0.2) +
+  facet_wrap(~ class) +
+  labs(
+    title = "Mean ± SD per latent class",
+    x = "Mean response",
+    y = "Question"
+  ) +
+  theme_minimal() +
+  theme(
+    strip.text = element_text(size = 12, face = "bold")
+  )
+
+#make the mean and standard deviation vertical and the questions on the x-as
+library(dplyr)
+library(ggplot2)
+
+# remove NA Class (optional)
+stats_long2 <- stats_long %>% 
+  filter(!is.na(class))
+
+stats_long2$Question <- factor(stats_long2$Question, levels = unique(stats_long2$Question))
+
+p_mean_sd <- ggplot(stats_long2, aes(x = Question, y = mean, 
+                        color = class, group = class)) +
+  geom_point(position = position_dodge(width = 0.5), size = 3) +
+  geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd),
+                width = 0.15,
+                position = position_dodge(width = 0.5)) +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "Mean ± SD per Latent Class",
+    x = "Question",
+    y = "Mean response",
+    color = "Class"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+#save plot 
+ggsave(
+  filename = file.path(output_dir, "Mean_SD_per_latent_class.png"),
+  plot = p_mean_sd,
+  width = 12,
+  height = 7,
+  dpi = 300
+)
+
+
+
+# 
+output_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/fig_output"
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 # 7. Sla de tabel op als CSV en Excel in fig_output
@@ -442,5 +665,219 @@ write.csv(
 write_xlsx(
   mean_table,
   path = file.path(output_dir, "mean_scores_per_class.xlsx")
+)
+
+
+##ANOVA for mean for individuals in different classes
+questions <- c(
+  "Q_Experiencecode",
+  "Q_Info_Governmentcode",
+  "Q_Info_WeatherForecastcode",
+  "Q_Info_Scientificcode",
+  "Q_Info_GeneralMediacode",
+  "Q_Info_SocialMediacode",
+  "Q_FloodFuturecode",
+  "Q_ClimateChangecode",
+  "Q_Threatcode"
+)
+
+anova_results <- lapply(questions, function(q) {
+  formula <- as.formula(paste(q, "~ class"))
+  aov(formula, data = data_lca_numeric)
+})
+
+names(anova_results) <- questions
+
+#see if the question is siginificant in the classes
+summary(anova_results[[1]])   # Voor Q_Experiencecode
+summary(anova_results[[2]])   # etc.
+summary(anova_results[[3]]) 
+library(tidyverse)
+
+
+#find out if the questions are significant for the classes:-------------------------
+library(dplyr)
+
+# Extract p-values from each ANOVA
+anova_pvalues <- sapply(anova_results, function(aov_model) {
+  summary(aov_model)[[1]]["class", "Pr(>F)"]
+})
+
+# Zet om in een data frame
+anova_pvalues_df <- data.frame(
+  Question = names(anova_pvalues),
+  P_value = anova_pvalues
+)
+
+# Optioneel: voeg een kolom met significantie codes toe
+anova_pvalues_df <- anova_pvalues_df %>%
+  mutate(Significance = case_when(
+    P_value < 0.001 ~ "***",
+    P_value < 0.01  ~ "**",
+    P_value < 0.05  ~ "*",
+    P_value < 0.1   ~ ".",
+    TRUE            ~ ""
+  ))
+
+anova_pvalues_df
+
+# Make sure writexl is available
+if(!require(writexl)) install.packages("writexl")
+library(writexl)
+
+# Path to the output folder
+output_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/fig_output"
+
+# Maak de map aan als die nog niet bestaat
+dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+
+# Save ANOVA p-values table in Excel
+write_xlsx(anova_pvalues_df,
+           path = file.path(output_dir, "ANOVA_pvalues_table.xlsx"))
+
+# Optional: ook als CSV
+write.csv(anova_pvalues_df,
+          file = file.path(output_dir, "ANOVA_pvalues_table.csv"),
+          row.names = FALSE)
+
+
+
+# making a plot per question for the mean per class
+mean_table_long <- mean_table %>%
+  pivot_longer(
+    cols = starts_with("Q_"),
+    names_to = "Question",
+    values_to = "Mean"
+  )
+p <- ggplot(mean_table_long, aes(x = class, y = Mean, fill = class)) +
+  geom_col() +
+  facet_wrap(~ Question, scales = "free_y") +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "Mean score per question per latent class",
+    x = "Latent Class",
+    y = "Mean Response"
+  ) +
+  theme(legend.position = "none")
+
+# Zorg dat output folder bestaat
+dir.create("fig_output", showWarnings = FALSE)
+
+# Sla de plot op als PNG
+png("fig_output/mean_scores_per_question_per_class.png",
+    width = 1600, height = 900)
+
+print(p)  # print de ggplot in het PNG apparaat
+dev.off()
+
+
+# #Likert plots for survey responses
+# install.packages("forwards", repos = "http://cran.us.r-project.org")
+# useR2016 = forwards::useR2016
+# 
+# #load the dataset, use the function for xlsx file
+# df <- readxl::read_xlsx('resources/Likert/2019-public-data-file_parent.xlsx', sheet=2)
+# #choose the schools by names (rows)
+# dfNew <- df %>% filter(DBN %in% c('03M165','03M145','03M163','03M075','03M084','03M166','03M009','03M087','03M452','03M199','03M191'))
+# #choose a question and answers by column indies (columns)
+# #For example, we choose : If school staff regularly communicate with me about how I can help my child learn.
+# dfNew <- dfNew %>% dplyr::select(c(1,2,4:7))
+# #set new names for the chosen columns as they were randomly assigned names #before. Here we use the likert levels as column names.
+# names(dfNew)[2:6] <- c("School_Name", "Strongly_disagree","Disagree","Agree","Strongly_agree")
+
+# #change the percentage columns to numeric type
+# dfNew$DBN <- as.factor(dfNew$DBN)
+# dfNew$School_Name <- as.factor(dfNew$School_Name)
+# dfNew <- dfNew %>% mutate_if(is.character, function(x) as.numeric(x))
+# head(dfNew)
+# 
+
+#likert chart
+library(dplyr)
+
+
+data_lca <- data_lca %>%
+  mutate(across(ends_with("code"), ~ as.numeric(as.character(.))))
+
+str(data_lca)
+
+dfNew <- data_lca %>%
+  select(id, Q_Info_Governmentcode)
+
+dfNew$Q_Info_Governmentcode <- as.numeric(dfNew$Q_Info_Governmentcode)
+
+# Selecteer één vraag, bijvoorbeeld Q_Info_Governmentcode
+question <- "Q_Info_Governmentcode"
+
+dfNew <- data_lca[, c("id", "Q_Info_Governmentcode")]
+
+
+# Maak een summary per code (1–6)
+likert_summary <- dfNew %>%
+  group_by(.data[[question]]) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  mutate(percentage = round(count / sum(count) * 100, 1)) %>%
+  rename(Response = .data[[question]])
+
+likert_summary
+
+
+
+#likert chart for all the questions together
+
+
+library(tidyverse)
+
+# Select al Likert-questions
+likert_vars <- names(data_lca)[grepl("code$", names(data_lca)) & names(data_lca) != "id"]
+
+# make a long format
+df_long <- data_lca %>%
+  pivot_longer(
+    cols = all_of(likert_vars),
+    names_to = "Question",
+    values_to = "Response"
+  )
+likert_summary <- df_long %>%
+  filter(!is.na(Response)) %>% 
+  group_by(Question, Response) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(Question) %>%
+  mutate(percentage = round(count / sum(count) * 100, 1))
+library(ggplot2)
+
+#make plot for allt he questions
+ggplot(likert_summary, aes(x = Question, y = percentage, fill = factor(Response))) +
+  geom_col(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  coord_flip() +
+  scale_fill_brewer(palette = "RdYlBu", direction = -1) +
+  labs(
+    x = "Survey Question",
+    y = "Percentage",
+    fill = "Response",
+    title = "Likert Distributions Across All Survey Questions"
+  ) +
+  theme_minimal()
+
+likert_plot <- ggplot(likert_summary, aes(x = Question, y = percentage, fill = factor(Response))) +
+  geom_col(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  coord_flip() +
+  scale_fill_brewer(palette = "RdYlBu", direction = -1) +
+  labs(
+    x = "Survey Question",
+    y = "Percentage",
+    fill = "Response",
+    title = "Likert Distributions Across All Survey Questions"
+  ) +
+  theme_minimal()
+ggsave(
+  filename = "Likert_AllQuestions.png",
+  plot = likert_plot,
+  path = output_dir,
+  width = 10,
+  height = 6,
+  dpi = 300
 )
 
