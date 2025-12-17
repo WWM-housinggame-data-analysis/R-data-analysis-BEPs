@@ -68,13 +68,24 @@ income_dist_table <- function(csv_list_2510 = "dataset list", GP2_tables = "tabl
   # Rename the added columns in the dataframe to know from which table first come from
   names(groupround)[names(groupround) == "name"] <- "group_name"
   
-  # Add to playerround the groupround selection to filter per round, group and session id and names by playerround = groupround id
-  playerround <- sqldf("
-  SELECT pr.*, gr.round_number, gr.group_id, gr.group_name, gr.gamesession_id, gr.gamesession_name, gr.group_scenario_id
-  FROM [playerround] AS pr
-  LEFT JOIN [groupround] AS gr
-  ON pr.groupround_id = gr.id
-")
+   # Add to playerround the groupround selection to filter per round, group and session id and names by playerround = groupround id
+   playerround <- sqldf("
+   SELECT pr.*, gr.round_number, gr.group_id, gr.group_name, gr.gamesession_id, gr.gamesession_name, gr.group_scenario_id
+   FROM [playerround] AS pr
+   LEFT JOIN [groupround] AS gr
+   ON pr.groupround_id = gr.id
+ ")
+#   playerround <- sqldf("
+#   SELECT 
+#     pr.*, 
+#     p.code  AS player_code,
+#     p.class AS class
+#   FROM [playerround] AS pr
+#   LEFT JOIN [player] AS p
+#   ON pr.player_id = p.id
+#   ORDER BY player_code ASC
+# ")
+
   
   # Rename the added columns in the dataframe to know from which table first come from
   names(playerround)[names(playerround) == "round_number"] <- "groupround_round_number"
@@ -83,14 +94,26 @@ income_dist_table <- function(csv_list_2510 = "dataset list", GP2_tables = "tabl
   # Rename id with the table prefix to avoid id ambiguity
   names(playerround)[names(playerround) == "id"] <- "playerround_id"
   
-  # Add to the playerround the p.code
+#   # Add to the playerround the p.code
+#   playerround <- sqldf("
+#   SELECT pr.*, p.code AS player_code
+#   FROM [playerround] AS pr
+#   LEFT JOIN [player] AS p
+#   ON pr.player_id = p.id
+#   ORDER BY player_code ASC
+# ")
   playerround <- sqldf("
-  SELECT pr.*, p.code AS player_code
+  SELECT 
+    pr.*, 
+    p.code  AS player_code,
+    p.[class] AS class
   FROM [playerround] AS pr
   LEFT JOIN [player] AS p
   ON pr.player_id = p.id
   ORDER BY player_code ASC
 ")
+  
+  
   playerround <- sqldf("
   SELECT pr.*, hg.code AS house_code
   FROM [playerround] AS pr
@@ -260,14 +283,38 @@ income_dist_table <- function(csv_list_2510 = "dataset list", GP2_tables = "tabl
     playerround$calculated_costs_measures_difference <- (playerround$cost_house_measures_bought +  playerround$cost_personal_measures_bought) - 
       (playerround$calculated_costs_personal_measures + playerround$calculated_costs_house_measures)
   }
-  # Filter the playerround dataset for the income distribution
-  ## Add the new calculated columns for the measures costs
-  new_vars <- c("calculated_costs_personal_measures", "calculated_costs_house_measures", "calculated_costs_measures_difference")
-  var_income_dist <- c(var_income_dist, new_vars)
-
-#  Collapse the column vector into a comma-separated string
-  col_income_dist <- paste(var_income_dist, collapse = ", ")
+   # Filter the playerround dataset for the income distribution
+   ## Add the new calculated columns for the measures costs
+   new_vars <- c("calculated_costs_personal_measures", "calculated_costs_house_measures", "calculated_costs_measures_difference")
+   var_income_dist <- c(var_income_dist, new_vars)
+ 
+ #  Collapse the column vector into a comma-separated string
+   col_income_dist <- paste(var_income_dist, collapse = ", ")
   
+  # ##CODE VAN CHAT________________
+  # 
+  # # Filter the playerround dataset for the income distribution
+  # ## Add the new calculated columns for the measures costs
+  # new_vars <- c(
+  #   "calculated_costs_personal_measures",
+  #   "calculated_costs_house_measures",
+  #   "calculated_costs_measures_difference"
+  # )
+  # var_income_dist <- c(var_income_dist, new_vars)
+  # 
+  # # ---- SQL SAFE COLUMN NAMES ----
+  # var_income_dist_sql <- ifelse(
+  #   var_income_dist == "class",
+  #   "[class]",
+  #   var_income_dist
+  # )
+  # 
+  # # Collapse the
+  # col_income_dist <- paste(var_income_dist_sql, collapse = ", ")
+  # 
+  # 
+  # 
+  # #______________________
   # Run the query to filter the playerround dataframe with the var_income_dist 
   df_income_dist <- sqldf(paste0("
   SELECT ", col_income_dist, "

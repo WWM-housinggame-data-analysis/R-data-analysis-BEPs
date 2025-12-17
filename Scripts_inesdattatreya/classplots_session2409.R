@@ -23,7 +23,7 @@ scriptfolder_path <- dirname(rstudioapi::getActiveDocumentContext()$path)
 setwd(scriptfolder_path)
 # Set path to the input directories
 functionfolder_path <- file.path(scriptfolder_path,"functions")
-dataset_path <- file.path(dirname(scriptfolder_path),"Datasets")
+dataset_path <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Datasets"
 # Set path to the output directories
 data_output_path <- file.path("data_output", "GS2_25-24_sessions")
 # Create the folder automatically if it doesn't exist
@@ -35,7 +35,7 @@ fig_output_path <- file.path("fig_output", "GS2_25-24_sessions")
 if (!dir.exists(fig_output_path)) {
   dir.create(fig_output_path, recursive = TRUE)
 }
-github <- "vjcortesa"
+github <- "inesdattatreya"
 
 # Load required functions
 source(file.path(functionfolder_path, "Combine_csvs_to_excel_function_vjcortesa.R"))
@@ -45,18 +45,13 @@ source(file.path(functionfolder_path, "GP2_vjcortesa_plot_income_dist_function.R
 
 
 # Read the database folder to create accordingly the dataframe tables
-#session_2510 <- "housinggame_session_20_251007_VerzekeraarsMasterClass"
-#session_2509 <- "housinggame_session_19_250923_EPA_IntroDays_Overasselt"
+
 session_2409 <- "housinggame_session_16_240924_EPA_IntroDays_Ommen"
 
 # Set the Dataset folder path dynamically
-# Read all tables in the folder with the custom function
-#csv_list_2510 <- read_all_csvs(dataset_path, session_2510)
-#csv_list_2509 <- read_all_csvs(dataset_path, session_2509)
+
 csv_list_2409 <- read_all_csvs(dataset_path, session_2409)
-# Create a combined excel with all database tables to have as a reference their initial configuration
-#combine_csvs_to_excel(dataset_path,session_2510)
-#combine_csvs_to_excel(dataset_path,session_2509)
+
 combine_csvs_to_excel(dataset_path,session_2409)
 
 # Step 2: Data Preparation ---------------------------------------------------
@@ -65,6 +60,12 @@ combine_csvs_to_excel(dataset_path,session_2409)
 # Select the relevant tables for the income distribution
 GP2_tables <- c("gamesession", "group", "groupround", "playerround", "player","measuretype","personalmeasure","housemeasure", "housegroup")
 
+head(GP2_tables)
+
+incomeplot <- read.csv("C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Datasets/housinggame_session_16_240924_EPA_IntroDays_Ommen/player.csv")
+
+head(incomeplot)
+names(incomeplot)
 
 
 # Select the variables for the income distribution plot
@@ -75,14 +76,13 @@ var_income_dist <- c(
   "profit_sold_house", "spent_savings_for_buying_house",
   "cost_taxes", "mortgage_payment",
   "cost_house_measures_bought", "cost_personal_measures_bought",
-  "cost_fluvial_damage", "cost_pluvial_damage","class",
+  "cost_fluvial_damage", "cost_pluvial_damage",
   "spendable_income"
 )
 
 
 
-#GP2_2510 <- income_dist_table(csv_list_2510, GP2_tables, var_income_dist)
-#GP2_2509 <- income_dist_table(csv_list_2509, GP2_tables, var_income_dist)
+
 GP2_2409 <- income_dist_table(csv_list_2409, GP2_tables, var_income_dist)
 
 # Assign a table to a variable in the global environment
@@ -116,12 +116,10 @@ print(dataset_output)
 # Variables to create the
 group <- "all"
 round <- "all"
-welfare_classes <- c("Very Low", 
-                     "Low" , 
-                     "Low-average", 
-                     "High-average", 
-                     "High", 
-                     "Very High")
+riskp_classes <- c("Cautious optimists", 
+                     "informed preparers" , 
+                     "I don’t care" 
+                     )
 # Filter the dataset with all players plot
 plot_player_all <- data.frame(player_code = c("t1p1", "t1p2", "t1p3", "t1p4", "t1p5", "t1p6" , "t1p7", "t1p8"),
                               selected = c(1, 1, 1, 1, 1, 1, 1, 1))
@@ -175,7 +173,7 @@ var_to_plot <- data.frame(
 )
 
 # Testing the plot function
-plot_check <- income_dist_plot(dataset, group, round, players, welfare_classes,var_to_plot) 
+plot_check <- income_dist_plot(dataset, group, round, players, riskp_classes,var_to_plot) 
 print(plot_check)
 # Calcule the reference dataset with all players average
 ## mapply safely substracts ingnoring NAs in either column 
@@ -214,7 +212,7 @@ income_dist_x <- income_dist_x %>% count(round_income, name = "players_count")
 
 # frequency table of round_income values, with the counts stored in players_count.
 income_dist_x$round_income <- income_dist_x$round_income/1000
-income_dist_x$label <- welfare_classes
+income_dist_x$label <- riskp_classes
 
 # Filter the dataset according to the players to plot
 for (i in 1:nrow(players)) {
