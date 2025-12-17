@@ -48,7 +48,7 @@ github <- "vjcortesa"
 #Not applicable yet
 
 # Read the database folder to create accordingly the dataframe tables
-income_distribution_dataset <- "vjcortesa_G2_Income_dist_240924.xlsx"
+income_distribution_dataset <- "vjcortesa_G2_Income_dist_251007.xlsx"
 # Extract the 6-digit date before .xlsx
 dataset_date <- sub(".*_(\\d{6})\\.xlsx$", "\\1", income_distribution_dataset)
 
