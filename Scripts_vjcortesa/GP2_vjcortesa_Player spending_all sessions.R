@@ -63,10 +63,11 @@ combine_csvs_to_excel(dataset_path,session_2409)
 # Checks for possible errors in the spendable income calculation
 
 # Select the relevant tables for the income distribution
-GP2_tables <- c("gamesession", "group", "groupround", 
+GP2_tables <- c("gamesession", "group", "groupround",
                 "playerround", "player","measuretype",
                 "personalmeasure","housemeasure", "housegroup",
-                "house","initialhousemeasure")
+                "community","house","initialhousemeasure",
+                "question","questionitem","questionscore")
 
 # Select the variables for the income distribution plot
 var_income_dist <- c(
@@ -94,8 +95,12 @@ measuretype <- csv_list_2409[["measuretype"]]
 personalmeasure <- csv_list_2409[["personalmeasure"]]
 housemeasure <- csv_list_2409[["housemeasure"]]
 housegroup <- csv_list_2409[["housegroup"]]
+community <- csv_list_2409[["community"]]
 house <- csv_list_2409[["house"]]
 initialhousemeasure <- csv_list_2409[["initialhousemeasure"]]
+question <- csv_list_2409[["question"]]
+questionitem <- csv_list_2409[["questionitem"]]
+questionscore <- csv_list_2409[["questionscore"]]
 
 # Rename the session name variable in the dataframe to avoid name overlap with the group name variable
 gamesession <- sqldf("SELECT * FROM gamesession")
@@ -149,27 +154,64 @@ names(playerround)[names(playerround) == "id"] <- "playerround_id"
 
 # Add to the playerround the p.code
 playerround <- sqldf("
-  SELECT pr.*, p.code AS player_code
+  SELECT pr.*, p.code AS player_code, p.welfaretype_id AS welfaretype_id
   FROM [playerround] AS pr
   LEFT JOIN [player] AS p
   ON pr.player_id = p.id
   ORDER BY player_code ASC
 ")
 
+house <- sqldf("
+  SELECT h.*, c.name AS community_name
+  FROM [house] AS h
+  LEFT JOIN [community] as c
+  ON c.id = h.community_id
+")
+
+# Map numeric welfaretype_id to welfare text levels
+#converts numeric welfare IDs into human‑readable ordered categories
+# Only if there are exactly six distinct IDs. Otherwise, it warns you that the mapping isn’t valid.
+welfare_labels <- c("Very Low",
+                    "Low",
+                    "Low-average",
+                    "High-average",
+                    "High",
+                    "Very High")
+
+wt_codes <- sort(unique(playerround$welfaretype_id))
+
+if (length(wt_codes) == 6) {
+  playerround$welfare_level <- factor(
+    welfare_labels[match(playerround$welfaretype_id, wt_codes)],
+    levels = welfare_labels,
+    ordered = TRUE
+  )
+} else {
+  warning("Expected 6 distinct welfaretype_id values, but found ",   #make sure that it returns warning if not applicable
+          length(wt_codes),
+          ". welfare_level not created.")
+}
+
 playerround <- sqldf("
-  SELECT pr.*, hg.code AS house_code
+  SELECT pr.*, hg.code AS house_code, h.community_name
   FROM [playerround] AS pr
   LEFT JOIN [housegroup] AS hg
   ON pr.final_housegroup_id = hg.id
+  LEFT JOIN [house] AS h
+  ON hg.code = h.code
   ORDER BY pr.player_code ASC
 ")
 
 # Inspect result
 head(playerround)
+head(house)
+
+# playerroun$housing_area <- sqldf("
+#   "" )
 
 # Add to the personalmeasure the playerround selection to filter per player, table, round and cost of measures
 personalmeasure <- sqldf("
-  SELECT pm.*, pr.group_name, pr.player_id, pr.player_code, pr.groupround_round_number, pr.round_income, pr.cost_house_measures_bought, pr.final_housegroup_id, pr.mortgage_payment
+  SELECT pr.gamesession_name, pm.*, pr.group_name, pr.player_id, pr.player_code, pr.groupround_round_number, pr.round_income, pr.cost_house_measures_bought, pr.final_housegroup_id, pr.mortgage_payment
   FROM [personalmeasure] AS pm
   LEFT JOIN [playerround] AS pr
   ON pm.playerround_id = pr.playerround_id
@@ -232,7 +274,7 @@ housemeasure <- sqldf("
 ")
 
 housemeasure <- sqldf("
-  SELECT hm.*, pr.group_name, pr.player_id, pr.player_code, pr.groupround_round_number, pr.round_income, pr.cost_house_measures_bought
+  SELECT pr.gamesession_name, hm.*, pr.group_name, pr.player_id, pr.player_code, pr.groupround_round_number, pr.round_income, pr.cost_house_measures_bought
   FROM [housemeasure] AS hm
   LEFT JOIN [playerround] AS pr
   ON hm.owner_id = pr.player_id AND hm.bought_in_round = pr.groupround_round_number
@@ -322,12 +364,61 @@ playerround <- sqldf("
   ORDER BY pr.player_code ASC
 ")
 
-playerround$calculated_costs_measures_difference <- playerround$cost_house_measures_bought - 
-  (playerround$calculated_costs_personal_measures + playerround$calculated_costs_house_measures)
+if (dataset_date == "2409") {
+  playerround$calculated_costs_measures_difference <- playerround$cost_house_measures_bought - 
+    (playerround$calculated_costs_personal_measures + playerround$calculated_costs_house_measures)
+} else {
+  playerround$calculated_costs_measures_difference <- (playerround$cost_house_measures_bought +  playerround$cost_personal_measures_bought) - 
+    (playerround$calculated_costs_personal_measures + playerround$calculated_costs_house_measures)
+}
 
+if (all(c("cost_fluvial_damage", "cost_pluvial_damage") %in% names(playerround))) {
+  playerround$total_damage_costs <- rowSums(
+    playerround[, c("cost_fluvial_damage", "cost_pluvial_damage")],
+    na.rm = TRUE
+  )
+} else {
+  warning("cost_fluvial_damage and/or cost_pluvial_damage missing in playerround.")
+}
+
+# Add to question score the question_id and player_round tables variables
+# CAST(answer AS INTEGER) ensures the numeric answer is converted to text before concatenation
+questionscore <- sqldf("
+  SELECT 
+    qs.id AS answer_id, qs.answer, qs.late_answer,qi.name AS answer_option, CAST(qs.answer AS INTEGER) || ' - ' || qi.name AS answer_plus_option, 
+    qs.question_id, q.name AS question_name, q.description AS question_description,
+    qs.playerround_id, pr.groupround_round_number, pr.player_code, pr.group_name, pr.gamesession_name
+  FROM questionscore AS qs
+  LEFT JOIN question AS q
+    ON qs.question_id = q.id
+  LEFT JOIN questionitem AS qi
+    ON qs.answer = qi.code
+   AND qs.question_id = qi.question_id
+  LEFT JOIN  playerround AS pr
+   ON qs.playerround_id = pr.playerround_id
+")
+
+questionitem <- sqldf("
+  SELECT 
+    qi.id AS questionitem_id, qi.code AS answer_code, qi.name AS answer_name, 
+    CAST(qi.code AS INTEGER) || ' - ' || qi.name AS answercode_plus_name,
+    q.name AS question_name, q.description AS question_description
+  FROM questionitem AS qi
+  LEFT JOIN question AS q
+    ON qi.question_id = q.id
+  ")
 # Filter the playerround dataset for the income distribution
 ## Add the new calculated columns for the measures costs
-new_vars <- c("calculated_costs_personal_measures", "calculated_costs_house_measures", "calculated_costs_measures_difference")
+new_vars <- c("calculated_costs_personal_measures", 
+              "calculated_costs_house_measures", 
+              "calculated_costs_measures_difference",
+              "satisfaction_total",
+              "welfaretype_id",
+              "total_damage_costs",
+              "community_name", #instead of housing_area to keep variable naming consistent
+              "fluvial_house_delta",
+              "pluvial_house_delta"
+              )
 var_income_dist <- c(var_income_dist, new_vars)
 
 # Collapse the column vector into a comma-separated string
@@ -374,6 +465,10 @@ list_income_dist <- list(
   measuretype = measuretype,
   personalmeasure = personalmeasure,
   housemeasure = housemeasure,
+  questionscore = questionscore,
+  questionitem = questionitem,
+  initialhousemeasure = initialhousemeasure,
+  house = house,
   housegroup = housegroup,
   group = group,
   groupround = groupround,

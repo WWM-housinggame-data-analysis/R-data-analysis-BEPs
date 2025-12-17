@@ -52,8 +52,8 @@ presurvey_settings_251007 <- read_excel(presurvey_overview, sheet = "dataset_251
 presurvey_file_251007 <- file.path(datasetfolder_path,"housinggame_session_20_251007_surveys/251009_251007_WhereWeMove sessions - presurvey.xlsx")
 
 # Extract the risk perception related questions from the pre-surveys
-#rp_240924 = riskperception_ds(presurvey_overview, presurvey_file_240924,"dataset_240924")
-#rp_250923 = riskperception_ds(presurvey_overview, presurvey_file_250923,"dataset_250923")
-#rp_251007 = riskperception_ds(presurvey_overview, presurvey_file_251007,"dataset_251007")
+rp_240924 = riskperception_ds(presurvey_overview, presurvey_file_240924,"dataset_240924")
+rp_250923 = riskperception_ds(presurvey_overview, presurvey_file_250923,"dataset_250923")
+rp_251007 = riskperception_ds(presurvey_overview, presurvey_file_251007,"dataset_251007")
 
 
