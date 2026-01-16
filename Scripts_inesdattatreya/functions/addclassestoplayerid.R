@@ -1,12 +1,15 @@
 # Step 1: Data Settings ---------------------------------------------------------------------------------
-# Install, load, set the necessary packages, directories and functions
+# Install, load, and set the necessary packages, directories, and functions
+
 install.packages("poLCA")
 install.packages("dplyr") 
 install.packages("tidyverse") 
 
 library(poLCA)
-# Load if using RStudio (interactive session)
+
+# Load RStudio-specific functionality (only works in interactive RStudio sessions)
 library(rstudioapi)
+
 library(ggplot2)
 library(reshape2)
 
@@ -14,60 +17,71 @@ install.packages("here")
 install.packages("readxl")
 
 library(here)
-
 library(readxl)
 
-library(readxl)# Load if using RStudio (interactive session)
+# Load RStudio API again (redundant but harmless)
 library(rstudioapi)
 
-#Step 2: Upload dataset----------------------------------------------------------------------------------
-# Get the path of the current script (works in RStudio)
-# e.g. "~/R data analysis BEPs/Scripts_vjcortesa/GS4_vjcortesa_How is risk perception assessed_library exploration.R"
+# Step 2: Upload dataset----------------------------------------------------------------------------------
+# Get the file path of the currently active R script (works only in RStudio)
+# Example: "~/R data analysis BEPs/Scripts_vjcortesa/GS4_....R"
 script_path <- rstudioapi::getActiveDocumentContext()$path
-# e.g. "~/R data analysis BEPs/Scripts_vjcortesa/"
+
+# Extract the folder containing the script
 scriptfolder_path <- dirname(script_path)
+
+# Set working directory to the script folder
 setwd(scriptfolder_path)
 print(scriptfolder_path)
 
-
-# Set path to the input directories
-functionfolder_path <- file.path(scriptfolder_path,"functions")
-dataset_path <- file.path(dirname(scriptfolder_path),"Datasets")
+# Define paths to input directories
+functionfolder_path <- file.path(scriptfolder_path, "functions")
+dataset_path <- file.path(dirname(scriptfolder_path), "Datasets")
 print(dataset_path)
-# Set path to the output directories
+
+# Define output directory for data
 data_output_path <- file.path("data_output")
-# Create the folder automatically if it doesn't exist
+
+# Create output directory if it does not exist
 if (!dir.exists(data_output_path)) {
   dir.create(data_output_path, recursive = TRUE)
 }
-fig_output_path <- file.path("fig_output")
-data <- read_excel(
-  "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Datasets/Riskperceptiondataset_201125.xlsx")
 
+# Define output directory for figures
+fig_output_path <- file.path("fig_output")
+
+# Read the risk perception dataset from Excel
+data <- read_excel(
+  "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Datasets/Riskperceptiondataset_201125.xlsx"
+)
 
 install.packages("tidyverse")
 library(tidyverse)
-#code to check dataset, nrow() gives the number of respondents
-nrow(data)
-tail(data)
-head(data)
-nrow(data)
-ncol(data)
-colnames(data)
 
-#split up datasets for every date -----------------
+# Basic dataset inspection
+nrow(data)        # Number of respondents
+tail(data)        # Last rows
+head(data)        # First rows
+nrow(data)        # Number of rows
+ncol(data)        # Number of columns
+colnames(data)    # Column names
+
+# Load additional packages used later
 library(dplyr)
 library(lubridate)
 library(purrr)
 library(writexl)
 library(rstudioapi)
 
-
 library(poLCA)
 library(dplyr)
+
+# Explicitly bind dplyr::select to avoid conflicts
 select <- dplyr::select
 
-# Step 3: Pick the columns we use for risk perception, which are only the codes of the answers---------------------------------------
+# Step 3: Select variables used for risk perception analysis ---------------------------------------------
+# Only coded answer variables are selected for the LCA
+
 data_lca <- data %>%
   select(
     id,
@@ -82,104 +96,96 @@ data_lca <- data %>%
     Q_ClimateChangecode,
     Q_Threatcode
   ) %>%
-  # Concert all columns except for id to column
+  # Convert all variables except 'id' to factors (required for poLCA)
   mutate(across(-id, as.factor))
-print(data_lca$Q_PlayerNumber)
 
+# Check player numbers
+print(data_lca$Q_PlayerNumber)
 
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-# Step 4: Model Specification------------------------------------------------------------------------------------
-# Specifying the LCA model with 3 latent classes
-# Combines the five variables Q1 through Q5 into a matrix of multiple response variables.
-# ~ 1: Specifies a model with no preditors (i.e explanatory variables) just a constant (intercept) term."
-# Assigns the resulting formula to the defined variable
-lca_vars <- names(data_lca)[-c(1, 2)] #OOK PLAYER NUMBER ER UIT
+# Step 4: Model Specification ----------------------------------------------------------------------------
+# Specify the Latent Class Analysis (LCA) model with 3 latent classes
+# All selected risk perception variables are combined as multiple response variables
+# "~ 1" indicates a model with no predictors (intercept-only model)
 
+# Exclude 'id' and 'Q_PlayerNumber' from LCA variables
+lca_vars <- names(data_lca)[-c(1, 2)]
 
+# Create LCA formula dynamically
 f <- as.formula(
   paste("cbind(", paste(sprintf("`%s`", lca_vars), collapse = ", "), ") ~ 1")
 )
 
-
 ##---------------
 
-# 1. Selecteer alleen complete cases voor LCA
+# 1. Select only complete cases for LCA (no missing values on LCA variables)
 data_lca_complete <- data_lca[complete.cases(data_lca[, lca_vars]), ]
 
-# 2. Voer LCA uit op de complete cases
+# 2. Run LCA on complete cases with 3 classes
 lca_model <- poLCA(f, data_lca_complete, nclass = 3)
 
-# 3. Voeg de voorspelde klasse toe aan de dataset van complete cases
-data_lca_complete$class <- lca_model$predclass  # Hier gebruik je 'class'
+# 3. Add predicted class membership to the complete-case dataset
+data_lca_complete$class <- lca_model$predclass
 
-# 4. Voeg de klasse terug aan de originele dataset
+# 4. Merge class membership back into the full dataset
 data_lca <- data_lca %>%
   left_join(
-    data_lca_complete %>% select(id, class),  # Voeg 'class' toe
+    data_lca_complete %>% select(id, class),
     by = "id"
   ) %>%
+  # Assign class = 0 to respondents without a class (incomplete cases)
   mutate(
-    class = ifelse(is.na(class), 0, class)  # Vervang NA door 0
+    class = ifelse(is.na(class), 0, class)
   )
 
 ##-------------
 
-# 1. Run LCA on complete cases
+# 1. Run LCA again on complete cases (repetition of the previous step)
 data_lca_complete <- data_lca[complete.cases(data_lca[, lca_vars]), ]
 lca_model <- poLCA(f, data_lca_complete, nclass = 3)
 
-# 2. Add class to complete cases
+# 2. Add class membership again to the complete-case dataset
 data_lca_complete <- data_lca_complete %>%
   mutate(class = lca_model$predclass)
 
-
-# 4. Merge terug naar originele data_lca
+# 3. Merge class membership back into the full dataset again
 data_lca <- data_lca %>%
   left_join(
-    data_lca_complete %>% select(id, class),  # alleen id en class die bestaan
+    data_lca_complete %>% select(id, class),
     by = "id"
   ) %>%
-  # Alle rijen die niet in data_lca_complete zaten krijgen automatisch 0
+  # Rows not included in complete cases receive class = 0
   mutate(class = ifelse(is.na(class), 0, class))
 
-
-# # 3. Merge back to full dataset
-# data_lca <- data_lca %>%
-#   left_join(
-#     data_lca_complete %>% select(id, lca_class), 
-#     by = "id"
-#   ) %>%
-#   mutate(
-#     lca_class = ifelse(is.na(lca_class), 0, lca_class)  # rows that were missing in complete cases
-#   )
-
+# Run LCA on the full dataset (including class = 0 rows)
 lca_model <- poLCA(f, data_lca, nclass = 3)
-
 
 print(lca_model)
 
+# Create a dataset with only complete cases for LCA variables
 data_lca_complete <- na.omit(data_lca[, c("id", lca_vars)])
 
+# Run LCA again on the full dataset
 lca_model <- poLCA(f, data_lca, nclass = 3)
 
+# Assign predicted class membership
 data_lca_complete$class <- lca_model$predclass
 
-# data_lca$class <- lca_model$predclass
-
+# Print model output
 print(lca_model)
 
-
+# Save LCA model output to a text file
 sink(file.path(data_output_path, "allsurveyanalysis_Step3.txt"))
 print(lca_model)
 sink()
 
-# Make a list to save all the models 
+# Create a list to store multiple LCA models
 models <- list()
 
-# Fit models with 2,3,4 or 5 classes
+# Fit LCA models with 2, 3, 4, and 5 classes
 for (k in 2:5) {
   models[[paste0("Class_", k)]] <- poLCA(
     f,
@@ -190,37 +196,36 @@ for (k in 2:5) {
   )
 }
 
-
-
-# Make a list with all the column names for LCA
-#lca_vars <- names(data_lca)[-1]  # alles behalve id
-
-
-# Check
+# Inspect the structure of the LCA dataset
 str(data_lca)
 
 library(readxl)
+
+# Reload the original dataset (not used further here)
 data <- read_excel(
-  "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Datasets/Riskperceptiondataset_201125.xlsx")
- # Pad naar het outputbestand
- output_path <- file.path(data_output_path, output_file)
- 
- # Sla de data op
- write_xlsx(data_lca[, c("id", "class")],
-            path = output_path)
- 
- ##MAKE FILES PER SESSION WITH CLASSES:
- library(dplyr)
- library(readxl)
- library(writexl)
-# 
- # Map waar alle bestanden staan
- data_output_path <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/data_output"
- 
- # Masterbestand met ID + class
- master_file <- file.path(data_output_path, "player ids and their classes session x.xlsx")
- master_data <- read_excel(master_file)
-#Lijst van sessiebestanden
+  "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Datasets/Riskperceptiondataset_201125.xlsx"
+)
+
+# Define output file path
+output_path <- file.path(data_output_path, output_file)
+
+# Save ID and class assignment to Excel
+write_xlsx(data_lca[, c("id", "class")],
+           path = output_path)
+
+## MAKE FILES PER SESSION WITH CLASSES ------------------------------------------------------------
+library(dplyr)
+library(readxl)
+library(writexl)
+
+# Directory containing session files
+data_output_path <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/data_output"
+
+# Master file containing ID and class
+master_file <- file.path(data_output_path, "player ids and their classes session x.xlsx")
+master_data <- read_excel(master_file)
+
+# List of session files
 session_files <- c(
   "session_2024-09.xlsx",
   "session_2025-09.xlsx",
@@ -228,67 +233,60 @@ session_files <- c(
 )
 session_files <- file.path(data_output_path, session_files)
 
-# Loop over elk sessiebestand
+# Loop over session files and merge class information
 for (sess_file in session_files) {
   
-  # Lees sessiebestand
+  # Read session file
   sess_data <- read_excel(sess_file)
   
-  # Voeg class toe via left_join op id
+  # Merge class information using ID
   merged_data <- sess_data %>%
     left_join(master_data, by = "id")
   
-  # Nieuwe bestandsnaam
-  output_file <- sub("\\.xlsx$", "with_classes.xlsx", sess_file) #origineel = _with_classes
+  # Create output file name
+  output_file <- sub("\\.xlsx$", "with_classes.xlsx", sess_file)
   
-  # Opslaan
+  # Save merged file
   write_xlsx(merged_data, output_file)
-  message("Opgeslagen: ", output_file)
+  message("Saved: ", output_file)
 }
 
-
-
-#add class to excel file vjcortesa -------------
+# Add class to vjcortesa Excel file ---------------------------------------------------------------
 library(dplyr)
 library(readxl)
 library(writexl)
 
-# Pad naar bestanden
+# File paths
 vjc_file <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_vjcortesa/data_output/GS2_25-24_sessions/vjcortesa_G2_Income_dist_240924.xlsx"
 session_file <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/data_output/session_2024-09with_classes.xlsx"
-incomeplot_file <-"C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Datasets/housinggame_session_16_240924_EPA_IntroDays_Ommen/player.csv"
+incomeplot_file <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Datasets/housinggame_session_16_240924_EPA_IntroDays_Ommen/player.csv"
 
-
-# Inlezen
+# Read files
 vjc <- read_excel(vjc_file)
-session <- read_excel(session_file) #HIER GAAT HET MIS
+session <- read_excel(session_file)   # Issue occurs here according to comment
 incomeplot <- read.csv(incomeplot_file, stringsAsFactors = FALSE)
 
-
+# Inspect ID columns
 head(vjc$player_code, 20)
 head(session$Q_PlayerNumber, 20)
 head(incomeplot$code, 20)
 
-
-
-# Controleer welke kolommen in beide zitten:
+# Check column names
 names(vjc)
 names(session)
 names(incomeplot)
 
+# Check how many player codes match between datasets
 sum(vjc$player_code %in% session$Q_PlayerNumber)
 
-# >>> In jouw data heet het ID in vjc: player_id
-# >>> In session heet het: id
+# Merge class using player_code and Q_PlayerNumber
+vjc_with_class <- vjc %>% 
+  left_join(
+    session %>% select(Q_PlayerNumber, class),
+    by = c("player_code" = "Q_PlayerNumber")
+  )
 
-# # Merge via player_code = Q_PlayerNumber
- vjc_with_class <- vjc %>% 
-   left_join(
-     session %>% select(Q_PlayerNumber, class),
-     by = c("player_code" = "Q_PlayerNumber")
-   )
-
-#when there is no class to assign, automatically assign 0
+# Assign class = 0 where no class was found
 vjc_with_class <- vjc %>% 
   left_join(
     session %>% select(Q_PlayerNumber, class),
@@ -296,185 +294,13 @@ vjc_with_class <- vjc %>%
   ) %>%
   mutate(class = ifelse(is.na(class), 0, class))
 
-
-# Opslaan
+# Save final file
 output_file <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/data_output/vjcortesa_G2_Income_dist_240924with_classes.xlsx"
 write_xlsx(vjc_with_class, output_file)
 
-message("Bestand opgeslagen: ", output_file)
+message("File saved: ", output_file)
 
-#check how many plasser did not get assigned to a class
+# Check how many players did not receive a class
 sum(vjc_with_class$class == 0)
 
 
-
-## PROBEREN CODE OM TE SCHRIJVEN MET INCOMEPLOT__________________________
-incomeplot_with_class <- incomeplot %>%
-  select(-class) %>%  # remove old 'class' if it exists
-  left_join(
-    session %>% select(Q_PlayerNumber, class),
-    by = c("code" = "Q_PlayerNumber")
-  ) %>%
-  mutate(class = ifelse(is.na(class), 0, class))
-
-# --- Overwrite original CSV file ---
-write_csv(incomeplot_with_class, incomeplot_file)
-
-message("Bestand overschreven: ", incomeplot_file)
-
-# --- 3. Save to Excel ---
-output_file <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/data_output/incomeplot_with_class.xlsx"
-write_xlsx(incomeplot_with_class, output_file)
-message("Bestand opgeslagen: ", output_file)
-
-
-#check how many plasser did not get assigned to a class
-sum(incomeplot_with_class$class == 0)
-
-
-
-##______________
-
-# 
-# 
-
-
-
-
-
-
-
-
-
-
-# #code to add column with classes to datasets for bigger plot
-# 
-# vjc_withclasses <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/data_output/vjcortesa_G2_Income_dist_240924with_classes.xlsx"
-# 
-# incomeplot_file <-"C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Datasets/housinggame_session_16_240924_EPA_IntroDays_Ommen/player.csv"
-# 
-# vjc <- read_excel(vjc_file)
-# incomeplot <- read.csv(incomeplot_file, stringsAsFactors = FALSE)
-# 
-# names(vjc)
-# names(incomeplot)
-# names(session)
-# 
-# sum(incomeplot$code %in% vjc$Q_PlayerNumber)
-# 
-# 
-# #en dan nu gaan kijken of je die aan elkaar kan koppelen, dus incomeplot+Classes maken
-# 
-# # Load required functions
-# source(file.path(functionfolder_path, "Combine_csvs_to_excel_function_vjcortesa.R"))
-# source(file.path(functionfolder_path, "Read_all_csvs_function_vjcortesa.R"))
-# source(file.path(functionfolder_path, "GP2_vjcortesa_income_dist_table_function.R"))
-# source(file.path(functionfolder_path, "GP2_vjcortesa_plot_income_dist_function.R"))
-# 
-# # Read the database folder to create accordingly the dataframe tables
-# #session_2510 <- "housinggame_session_20_251007_VerzekeraarsMasterClass"
-# #session_2509 <- "housinggame_session_19_250923_EPA_IntroDays_Overasselt"
-# session_2409 <- "housinggame_session_16_240924_EPA_IntroDays_Ommen"
-# 
-# # Set the Dataset folder path dynamically
-# # Read all tables in the folder with the custom function
-# #csv_list_2510 <- read_all_csvs(dataset_path, session_2510)
-# #csv_list_2509 <- read_all_csvs(dataset_path, session_2509)
-# csv_list_2409 <- read_all_csvs(dataset_path, session_2409)
-# 
-# # Create a combined excel with all database tables to have as a reference their initial configuration
-# #combine_csvs_to_excel(dataset_path,session_2510)
-# #combine_csvs_to_excel(dataset_path,session_2509)
-# combine_csvs_to_excel(dataset_path,session_2409)
-# 
-# names(players)
-# names(master_data)
-# 
-# 
-# 
-# #poging chat
-# # -------------------------------
-# # 1. Bestanden en paden
-# # -------------------------------
-# 
-# # Sessienaam (heb je al)
-# session_2409 <- "housinggame_session_16_240924_EPA_IntroDays_Ommen"
-# dataset_path <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Datasets"
-# 
-# 
-# # Pad naar player.csv
-# player_file <- file.path(
-#   dataset_path,
-#   session_2409,
-#   "player.csv"
-# )
-# 
-# # Masterbestand met id + class (LCA output)
-# master_file <- file.path(
-#   data_output_path,
-#   "player ids and their classes session x.xlsx"
-# )
-# 
-# # Outputbestand
-# output_file <- file.path(
-#   data_output_path,
-#   paste0(session_2409, "_player_with_classes.xlsx")
-# )
-# 
-# # -------------------------------
-# # 2. Inlezen
-# # -------------------------------
-# 
-# players <- read_csv(player_file, show_col_types = FALSE)
-# master_data <- read_excel(master_file)
-# 
-# # -------------------------------
-# # 3. Join + class = 0 indien geen match
-# # -------------------------------
-# 
-# players_with_class <- players %>%
-#   left_join(
-#     master_data %>% select(id, class),
-#     by = "id"
-#   ) %>%
-#   mutate(class = ifelse(is.na(class), 0, class))
-# 
-# # -------------------------------
-# # 4. Opslaan
-# # -------------------------------
-# 
-# write_xlsx(players_with_class, output_file)
-# 
-# message("Playerbestand met classes opgeslagen: ", output_file)
-# 
-# # -------------------------------
-# # 5. Controle
-# # -------------------------------
-# 
-# cat("Aantal spelers zonder class (class = 0): ",
-#     sum(players_with_class$class == 0), "\n")
-# 
-# 
-# #toevoegen aan player bestand:
-# library(readr)
-# library(dplyr)
-# library(writexl) # of write_csv als je CSV wilt overschrijven
-# 
-# 
-# # Join op ID en vul class = 0 indien geen match
-# incomeplot <- incomeplot %>%
-#   left_join(
-#     master_data %>% select(code, class),
-#     by = "code"
-#   ) %>%
-#   mutate(class = ifelse(is.na(class), 0, class))
-# 
-# # Opslaan **overschrijft het originele CSV-bestand**
-# write_csv(incomeplot, incomeplot_file)
-# 
-# message("Kolom 'class' toegevoegd en bestand overschreven: ", incomeplot_file)
-# 
-# # Controle
-# cat("Aantal spelers zonder class (class = 0): ", sum(incomeplot$class == 0), "\n")
-# 
-# 

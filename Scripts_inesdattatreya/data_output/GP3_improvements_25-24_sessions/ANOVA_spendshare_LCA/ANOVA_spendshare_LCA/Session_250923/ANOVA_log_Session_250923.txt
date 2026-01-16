@@ -1,0 +1,65 @@
+
+=================================================
+ONE-WAY ANOVA (Step-by-step guide implementation)
+=================================================
+
+STEP 1: Independence + Normality
+- Independence: YOU must guarantee this by design (different players per group, no repeated measures).
+- Normality: we'll inspect Q-Q plots per group (visual).
+
+Reading: /Users/inesdattatreya/Library/Mobile Documents/iCloud~is~workflow~my~workflows/Documents/player_spendshare_250923.xlsx 
+Sheet  : player_spendshare 
+-/                                                                                            /                                                                                            -                                                                                            
+OK: Each player appears once.
+
+Group sizes:
+# A tibble: 3 × 2
+  classes     n
+  <fct>   <int>
+1 1          25
+2 2           4
+3 3          16
+
+Balanced design? FALSE
+
+Normality check: Q-Q plots per group (see Plots pane)
+
+Boxplot (see Plots pane)
+
+STEP 2: Levene's test (homogeneity of variances)
+Levene's Test for Homogeneity of Variance (center = median)
+      Df F value Pr(>F)
+group  2  1.2326 0.3019
+      42               
+Levene p = 0.3018701 
+
+STEP 3: Choose ANOVA method
+- Variances OK (p > .05) -> Standard ANOVA (aov)
+                      Df Sum Sq Mean Sq F value Pr(>F)
+df_clean[[group_col]]  2 0.0318 0.01591   0.325  0.724
+Residuals             42 2.0551 0.04893               
+
+ANOVA diagnostics (Residuals, QQ, etc.) (see Plots pane)
+
+Shapiro-Wilk test on ANOVA residuals:
+
+	Shapiro-Wilk normality test
+
+data:  residuals(aov_model)
+W = 0.96842, p-value = 0.2536
+
+
+STEP 4: Evaluate omnibus test
+Primary method: aov 
+Primary p-value: 0.724174 
+
+RESULT: Not significant (p >= .05). Stop here per guide.
+
+[SAVED] Excel results -> /Users/inesdattatreya/Desktop/ANOVA_spendshare_LCA/ANOVA_spendshare_LCA/Session_250923/tables/ANOVA_results_Session_250923.xlsx
+[SAVED] Figures folder -> /Users/inesdattatreya/Desktop/ANOVA_spendshare_LCA/ANOVA_spendshare_LCA/Session_250923/figures
+
+=============================
+DONE
+Primary test used: aov 
+Post hoc used    : none 
+=============================

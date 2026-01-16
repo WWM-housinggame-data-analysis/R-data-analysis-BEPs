@@ -30,7 +30,7 @@ setwd(scriptfolder_path)
 print(scriptfolder_path)
 
 data <- read_excel(
-  "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Datasets/Riskperceptiondataset_201125.xlsx")
+  "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Datasets/Riskperceptiondataset_201125.xlsx")
 
 
 
@@ -92,10 +92,11 @@ lca_model <- poLCA(f, data_lca, nclass = 3)
 
 print(lca_model)
 
-#I put the path manual because my laptop crashed and I am on my roommates
 #laptop
 
-output_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/data_output"
+output_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/data_output"
+
+dir.exists(output_dir)
 dir.create(output_dir, showWarnings = FALSE)
 
 sink(file.path(output_dir, "allsurveyanalysis_Step3.txt"))
@@ -117,18 +118,20 @@ sink()
 # Fitting the model with multiple random starts
 # This runs the EM algorithm 5 times with different random starts and picks the best one
 # To reduce the risk of getting stuck in a poor solution, poLCA runs the EM algorithm multiple times, each time starting from a different random initialization of the parameters. It then selects the solution with the highest likelihood.
-#lca_model <- poLCA(f, data_lca, nclass = 3, nrep = 5)
-#sink(paste0("data_output/","allsurveyanlysis_Step4.txt"))
-# Printed output
-#print("Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/")
-#print("Step 4: Estimation Methods")
-#print(lca_model)
+lca_model <- poLCA(f, data_lca, nclass = 3, nrep = 5)
+# sink(paste0("data_output/","allsurveyanlysis_Step4.txt"))
+# # Printed output
+# print("Exploration following https://www.geeksforgeeks.org/r-machine-learning/latent-class-analysis-in-r/")
+# print("Step 4: Estimation Methods")
+sink(file.path(output_dir, "Step 4: Estimation Methods"))
+
+print(lca_model)
 # Stop redirecting output
-#sink()
+sink()
 
 
 #again I use this code because I changed laptop
-output_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/data_output"
+#output_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/data_output"
 
 dir.create(output_dir, showWarnings = FALSE)
 
@@ -227,7 +230,6 @@ print(fit_table)
 if(!require(writexl)) install.packages("writexl")
 library(writexl)
 
-output_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya/fig_output"
 
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
@@ -290,7 +292,7 @@ plot_lca1(lca_model)
 
 dev.off()
 
-scriptfolder_path <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya"
+scriptfolder_path <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya"
 
 setwd(scriptfolder_path)
 png(paste0("fig_output/","allsurveyanalysis_Output_website.png"), width = 1200, height = 600)
