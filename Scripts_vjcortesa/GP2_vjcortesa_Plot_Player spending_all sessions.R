@@ -66,7 +66,7 @@ combine_csvs_to_excel(dataset_path,session_2409)
 GP2_tables <- c("gamesession", "group", "groupround", 
                 "playerround", "player","measuretype",
                 "personalmeasure","housemeasure", "housegroup",
-                "house","initialhousemeasure")
+                "house","initialhousemeasure","community","house","initialhousemeasure","question","questionitem","questionscore")
 
 # Select the variables for the income distribution plot
 var_income_dist <- c(

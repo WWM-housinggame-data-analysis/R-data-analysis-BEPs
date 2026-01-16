@@ -1,0 +1,78 @@
+
+=================================================
+ONE-WAY ANOVA (Step-by-step guide implementation)
+=================================================
+
+STEP 1: Independence + Normality
+- Independence: YOU must guarantee this by design (different players per group, no repeated measures).
+- Normality: we'll inspect Q-Q plots per group (visual).
+
+Reading: C:/Users/annes/OneDrive/Bureaublad/BEP data analysis/Scripts_annehuitema2003/data_output/GP3_improvements_25-24_sessions/income_ratio_satis_plot/Session_251007/vjcortesa_spendshare_meanplayers_S251007_AllRounds_Gall_Pall.xlsx 
+Sheet  : player_spendshare 
+-/                                                                                               /                                                                                               -                                                                                               
+OK: Each player appears once.
+
+Group sizes:
+# A tibble: 6 × 2
+  welfare_level     n
+  <fct>         <int>
+1 High              4
+2 High-average      4
+3 Low               4
+4 Low-average       4
+5 Very High         4
+6 Very Low          4
+
+Balanced design? TRUE
+
+Normality check: Q-Q plots per group (see Plots pane)
+
+Boxplot (see Plots pane)
+
+STEP 2: Levene's test (homogeneity of variances)
+Levene's Test for Homogeneity of Variance (center = median)
+      Df F value  Pr(>F)  
+group  5  2.8278 0.04689 *
+      18                  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Levene p = 0.04688926 
+
+STEP 3: Choose ANOVA method
+- Variances NOT OK (p < .05) -> Welch ANOVA (oneway.test)
+
+	One-way analysis of means (not assuming equal variances)
+
+data:  df_clean[[dv_col]] and df_clean[[group_col]]
+F = 1.5528, num df = 5.0000, denom df = 7.9416, p-value = 0.2766
+
+
+Optional (Step 3B): Robust ANOVA (WRS2::t1way, 20% trimmed means)
+Call:
+WRS2::t1way(formula = as.formula(paste(dv_col, "~", group_col)), 
+    data = df_clean)
+
+Test statistic: F = 1.5528 
+Degrees of freedom 1: 5 
+Degrees of freedom 2: 7.94 
+p-value: 0.27656 
+
+Explanatory measure of effect size: 0.38 
+Bootstrap CI: [0.25; 0.77]
+
+Robust ANOVA p = 0.2765649 
+
+STEP 4: Evaluate omnibus test
+Primary method: welch 
+Primary p-value: 0.2765649 
+
+RESULT: Not significant (p >= .05). Stop here per guide.
+
+[SAVED] Excel results -> C:/Users/annes/OneDrive/Bureaublad/BEP data analysis/Scripts_annehuitema2003/data_output/GP3_improvements_25-24_sessions/ANOVA_spendshare_welfare/Session_251007/tables/ANOVA_results_Session_251007.xlsx
+[SAVED] Figures folder -> C:/Users/annes/OneDrive/Bureaublad/BEP data analysis/Scripts_annehuitema2003/data_output/GP3_improvements_25-24_sessions/ANOVA_spendshare_welfare/Session_251007/figures
+
+=============================
+DONE
+Primary test used: welch 
+Post hoc used    : none 
+=============================

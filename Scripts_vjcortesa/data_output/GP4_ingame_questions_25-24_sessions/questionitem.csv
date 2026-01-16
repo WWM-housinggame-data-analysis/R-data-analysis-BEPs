@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 "questionitem_id","answer_code","answer_name","answercode_plus_name","question_name","question_description"
 91,1,"I won't get flooded","1 - I won't get flooded","Question 1.","How do you judge the flooding risk of your house?"
 92,2,"If I get flooded, I won't get damaged","2 - If I get flooded, I won't get damaged","Question 1.","How do you judge the flooding risk of your house?"
@@ -9,3 +10,16 @@
 98,3,"Inconclusive","3 - Inconclusive","Question 2.","How confident are you that the public flood measures in your community will protect your house against flooding?"
 99,4,"Somehow confident","4 - Somehow confident","Question 2.","How confident are you that the public flood measures in your community will protect your house against flooding?"
 100,5,"Absolutely confident","5 - Absolutely confident","Question 2.","How confident are you that the public flood measures in your community will protect your house against flooding?"
+=======
+"questionitem_id","answer_code","answer_name","answercode_plus_name","question_name","question_description"
+91,1,"I won't get flooded","1 - I won't get flooded","Question 1.","How do you judge the flooding risk of your house?"
+92,2,"If I get flooded, I won't get damaged","2 - If I get flooded, I won't get damaged","Question 1.","How do you judge the flooding risk of your house?"
+93,3,"I might suffer minor damage","3 - I might suffer minor damage","Question 1.","How do you judge the flooding risk of your house?"
+94,4,"I will suffer some damage","4 - I will suffer some damage","Question 1.","How do you judge the flooding risk of your house?"
+95,5,"I will get seriously damaged","5 - I will get seriously damaged","Question 1.","How do you judge the flooding risk of your house?"
+96,1,"Absolutely not confident","1 - Absolutely not confident","Question 2.","How confident are you that the public flood measures in your community will protect your house against flooding?"
+97,2,"Not confident","2 - Not confident","Question 2.","How confident are you that the public flood measures in your community will protect your house against flooding?"
+98,3,"Inconclusive","3 - Inconclusive","Question 2.","How confident are you that the public flood measures in your community will protect your house against flooding?"
+99,4,"Somehow confident","4 - Somehow confident","Question 2.","How confident are you that the public flood measures in your community will protect your house against flooding?"
+100,5,"Absolutely confident","5 - Absolutely confident","Question 2.","How confident are you that the public flood measures in your community will protect your house against flooding?"
+>>>>>>> ca769c527e0b91e58914c5a922abfb19a7b9f934
