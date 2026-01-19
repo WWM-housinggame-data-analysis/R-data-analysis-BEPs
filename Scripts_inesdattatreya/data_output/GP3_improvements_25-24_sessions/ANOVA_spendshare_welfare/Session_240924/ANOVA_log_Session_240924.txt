@@ -1,0 +1,25 @@
+
+=================================================
+ONE-WAY ANOVA (Step-by-step guide implementation)
+=================================================
+
+STEP 1: Independence + Normality
+- Independence: YOU must guarantee this by design (different players per group, no repeated measures).
+- Normality: we'll inspect Q-Q plots per group (visual).
+
+Reading: /Users/inesdattatreya/Library/Mobile Documents/iCloud~is~workflow~my~workflows/Documents/player_spendshare_240924.xlsx 
+Sheet  : player_spendshare 
+-/                                                                                            /                                                                                            -                                                                                            
+OK: Each player appears once.
+
+Group sizes:
+# A tibble: 3 × 2
+  classes     n
+  <fct>   <int>
+1 1          25
+2 2           3
+3 3          38
+
+Balanced design? FALSE
+
+Normality check: Q-Q plots per group (see Plots pane)
