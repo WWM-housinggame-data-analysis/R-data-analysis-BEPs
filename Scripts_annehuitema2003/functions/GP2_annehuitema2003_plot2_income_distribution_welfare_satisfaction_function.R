@@ -132,6 +132,12 @@ welfare_spending_satisfaction_plot2 <- function(dataset,
   }
   df$satisfaction_value <- df$satisfaction_total
   
+  # Taxes: we use cost_taxes (must be present in df_income_dist)
+  if (!"cost_taxes" %in% names(df)) {
+    stop("Column 'cost_taxes' ontbreekt in dataset (df_income_dist).")
+  }
+  df$taxes_used <- df$cost_taxes
+  
   # --------- 5. Aggregatie per welfare_level -------------------------------
   summary_df <- df %>%
     group_by(welfare_level) %>%
@@ -142,6 +148,7 @@ welfare_spending_satisfaction_plot2 <- function(dataset,
       ave_spent_savings     = round(mean(spent_savings_for_buying_house, na.rm = TRUE), 2),
       ave_mortgage          = round(mean(mortgage_payment,     na.rm = TRUE), 2),
       ave_paid_debt         = round(mean(paid_debt,            na.rm = TRUE), 2),
+      ave_taxes             = round(mean(taxes_used,           na.rm = TRUE), 2),
       ave_satisfaction      = round(mean(satisfaction_value,   na.rm = TRUE), 2),
       .groups = "drop"
     ) %>%
@@ -157,7 +164,7 @@ welfare_spending_satisfaction_plot2 <- function(dataset,
   # --------- 6. Schalen voor tweede y-as (satisfaction) --------------------
   summary_df$bar_total <- with(summary_df,
                                ave_damage + ave_personal_measures + ave_house_measures +
-                                 ave_spent_savings + ave_mortgage + ave_paid_debt
+                                 ave_spent_savings + ave_mortgage + ave_paid_debt + ave_taxes
   )
 
   max_cost <- max(summary_df$bar_total,        na.rm = TRUE)
@@ -191,7 +198,8 @@ welfare_spending_satisfaction_plot2 <- function(dataset,
            ave_house_measures,
            ave_spent_savings,
            ave_mortgage,
-           ave_paid_debt)
+           ave_paid_debt,
+           ave_taxes)
   
   bars_long <- bars_df %>%
     tidyr::pivot_longer(
@@ -208,7 +216,8 @@ welfare_spending_satisfaction_plot2 <- function(dataset,
       "ave_house_measures",
       "ave_spent_savings",
       "ave_mortgage",
-      "ave_paid_debt"
+      "ave_paid_debt",
+      "ave_taxes"
     )
   )
   
@@ -302,7 +311,8 @@ welfare_spending_satisfaction_plot2 <- function(dataset,
         ave_house_measures    = "#433E5E",
         ave_spent_savings     = "#a3a3a3",
         ave_mortgage          = "#cccccc",
-        ave_paid_debt         = "black"
+        ave_paid_debt         = "black",
+        ave_taxes             = "#dddddd"
       ),
       labels = c(
         ave_damage            = "Damage (river + rain)",
@@ -310,7 +320,8 @@ welfare_spending_satisfaction_plot2 <- function(dataset,
         ave_house_measures    = "House measures",
         ave_spent_savings     = "Spent savings (buying house)",
         ave_mortgage          = "Mortgage payment",
-        ave_paid_debt         = "Paid debt"
+        ave_paid_debt         = "Paid debt",
+        ave_taxes             = "Taxes"
       )
     ) +
     scale_color_manual(

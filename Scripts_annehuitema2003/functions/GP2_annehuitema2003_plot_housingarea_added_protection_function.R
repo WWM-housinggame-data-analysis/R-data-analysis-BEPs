@@ -59,7 +59,7 @@ housingarea_added_protection_plot <- function(dataset,
   }
   
   # --------- 4. Checks: benodigde kolommen --------------------------------
-  needed_cols <- c("housing_area",
+  needed_cols <- c("community_name",
                    "welfare_level",
                    "pluvial_house_delta",
                    "fluvial_house_delta",
@@ -71,6 +71,8 @@ housingarea_added_protection_plot <- function(dataset,
   }
   
   # --------- 5. Sessiedatum & welfare/housing levels ----------------------
+  df$housing_area <- df$community_name
+  
   dataset_date <- stringr::str_extract(df$gamesession_name[1], "\\d+")
   
   # welfare-level volgorde
@@ -87,8 +89,8 @@ housingarea_added_protection_plot <- function(dataset,
   # vaste volgorde housing areas
   df$housing_area <- factor(df$housing_area,
                             levels = c("Unbesvillage",
-                                       "Natu-city",
-                                       "Dike-town"))
+                                       "Naturcity",
+                                       "Dyketown"))
   
   # NA-housing eruit (geen woonplek)
   df <- df %>% filter(!is.na(housing_area))
