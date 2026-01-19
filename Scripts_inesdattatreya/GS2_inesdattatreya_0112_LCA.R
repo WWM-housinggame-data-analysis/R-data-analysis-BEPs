@@ -16,6 +16,8 @@ install.packages("readxl")
 library(here)
 
 library(readxl)
+library(dplyr)
+library(tidyverse)
 
 library(readxl)# Load if using RStudio (interactive session)
 library(rstudioapi)
@@ -36,12 +38,7 @@ data <- read_excel(
 
 install.packages("tidyverse")
 library(tidyverse)
-#code to check dataset, nrow() gives the number of respondents
-nrow(data)
-tail(data)
-nrow(data)
-ncol(data)
-colnames(data)
+
 
 library(poLCA)
 library(dplyr)
@@ -290,7 +287,9 @@ plot_lca1(lca_model)
 
 dev.off()
 
-scriptfolder_path <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya"
+#scriptfolder_path <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/R data analysis/BranchInes/Scripts_inesdattatreya"
+scriptfolder_path <- dirname(rstudioapi::getActiveDocumentContext()$path)
+setwd(scriptfolder_path)
 
 setwd(scriptfolder_path)
 png(paste0("fig_output/","allsurveyanalysis_Output_website.png"), width = 1200, height = 600)

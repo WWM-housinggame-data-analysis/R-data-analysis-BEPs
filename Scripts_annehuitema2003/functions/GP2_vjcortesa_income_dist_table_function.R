@@ -1,3 +1,4 @@
+
 #CHANGES (lines are about right): 
 # line 226: added satisfaction_total from player to df_income_dist
 # Added welfaretype_id from player to player round line 91
@@ -1090,3 +1091,56 @@ income_dist_table <- function(csv_list_2510 = "dataset list", GP2_tables = "tabl
 # #     
 # #     return (df_income_dist)
 # #   }
+    
+    # Calculate the round costs to check the spendable income
+    # "paid_debt" not used in the calculations because is taken already when the spendable income comes as a negative value
+    # If either column has NA, the sum will also be NA unless the sum is done this way
+    df_income_dist$calculated_costs <- rowSums(df_income_dist[, c("living_costs", 
+                                                                  "cost_taxes",
+                                                                  "spent_savings_for_buying_house",
+                                                                  "mortgage_payment",
+                                                                  "cost_house_measures_bought",
+                                                                  "cost_personal_measures_bought",
+                                                                  "cost_fluvial_damage",
+                                                                  "cost_pluvial_damage"
+    )], na.rm = TRUE) 
+    
+    # Calculate the spendable income
+    df_income_dist$calculated_spendable <- df_income_dist$spendable_income
+    for (i in 1:nrow(df_income_dist)) {
+      if (df_income_dist$groupround_round_number[i] != "0") {
+        df_income_dist$calculated_spendable[i] <- sum(df_income_dist$calculated_spendable[i-1],
+                                                      df_income_dist$round_income[i],
+                                                      df_income_dist$profit_sold_house[i],
+                                                      -df_income_dist$calculated_costs[i],
+                                                      na.rm = TRUE)   }
+    } 
+    
+    df_income_dist$calculated_difference_spendable <- df_income_dist$spendable_income - df_income_dist$calculated_spendable
+    
+    # Step 3: Income distribution specification ---------------------------------------------------
+    # Create a list with the tables used in the calculation
+    list_income_dist <- list(
+      df_income_dist = df_income_dist,
+      playerround = playerround,
+      measuretype = measuretype,
+      personalmeasure = personalmeasure,
+      housemeasure = housemeasure,
+      housegroup = housegroup,
+      group = group,
+      groupround = groupround,
+      player = player,
+      gamesession = gamesession
+    )
+    
+    # Write to Excel with sheet names matching table names
+    
+    tryCatch({
+      write_xlsx(list_income_dist, file.path(data_output_path, paste0(github, "_G2_Income_dist_", dataset_date, ".xlsx")))
+      message("File written successfully.")
+    }, error = function(e) {
+      message("Error: ", e$message)
+    })
+    
+    return (df_income_dist)
+  }

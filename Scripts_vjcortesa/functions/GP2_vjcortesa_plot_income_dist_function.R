@@ -2,7 +2,7 @@ income_dist_plot <- function(dataset= "df_income_dist",
                              group_name = "all or name", 
                              round_number = "all or number", 
                              player_code = "frame with 1 or 0 per player to plot",
-                             welfare_classes = "labels",
+                             riskp_classes = "labels",
                              var_to_plot = "data frame witht the variables name, label and color",
                              output_prefix = "Dataset_") {
 

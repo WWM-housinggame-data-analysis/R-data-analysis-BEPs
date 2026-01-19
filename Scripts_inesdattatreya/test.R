@@ -444,49 +444,49 @@ final_model <- poLCA(f, data_lca, nclass = 3, nrep = 10)
 
 
 
+#deze code koppelt de classes aan ids en niet aan player ids
 
-
-# add latent class to excel 
-
-# make an empty column for NAs
-data_lca$class <- NA
-
-# Bepaal hoeveel classes beschikbaar zijn
-n_class <- length(final_model$predclass)
-
-data_lca$class[1:n_class] <- factor(final_model$predclass,
-                                    levels = 1:3,
-                                    labels = c("class 1", "class 2", "class 3"))
-
-# see results
-head(data_lca[, c("id", "class")], 20)  # 20 rijen bekijken om te checken
-
-data_output_path 
-
-library(writexl)
-
-
-# Maak de naam van het bestand
-output_file <- "player ids and their classes session x.xlsx"
-
-# Pad naar het outputbestand
-output_path <- file.path(data_output_path, output_file)
-
-# Sla de data op
-write_xlsx(data_lca[, c("id", "class")],
-           path = output_path)
-
-##MAKE FILES PER SESSION WITH CLASSES:
-library(dplyr)
-library(readxl)
-library(writexl)
-
-# Map waar alle bestanden staan
-data_output_path <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/data_output"
-
-# Masterbestand met ID + class
-master_file <- file.path(data_output_path, "player ids and their classes session x.xlsx")
-master_data <- read_excel(master_file)
+# # add latent class to excel 
+# 
+# # make an empty column for NAs
+# data_lca$class <- NA
+# 
+# # Bepaal hoeveel classes beschikbaar zijn
+# n_class <- length(final_model$predclass)
+# 
+# data_lca$class[1:n_class] <- factor(final_model$predclass,
+#                                     levels = 1:3,
+#                                     labels = c("class 1", "class 2", "class 3"))
+# 
+# # see results
+# head(data_lca[, c("id", "class")], 20)  # 20 rijen bekijken om te checken
+# 
+# data_output_path 
+# 
+# library(writexl)
+# 
+# 
+# # Maak de naam van het bestand
+# output_file <- "player ids and their classes session x.xlsx"
+# 
+# # Pad naar het outputbestand
+# output_path <- file.path(data_output_path, output_file)
+# 
+# # Sla de data op
+# write_xlsx(data_lca[, c("id", "class")],
+#            path = output_path)
+# 
+# ##MAKE FILES PER SESSION WITH CLASSES:
+# library(dplyr)
+# library(readxl)
+# library(writexl)
+# 
+# # Map waar alle bestanden staan
+# data_output_path <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/data_output"
+# 
+# # Masterbestand met ID + class
+# master_file <- file.path(data_output_path, "player ids and their classes session x.xlsx")
+# master_data <- read_excel(master_file)
 
 # Lijst van sessiebestanden
 session_files <- c(
