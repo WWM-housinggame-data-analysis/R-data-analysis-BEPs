@@ -1,7 +1,4 @@
 
-
-
-##Code copied from email:
 #Take raw CSVs for 3 sessions → 
 #build standardized income tables → 
 #call a generic plotting function to create spending plots per session.

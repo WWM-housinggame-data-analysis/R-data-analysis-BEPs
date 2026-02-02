@@ -1,486 +1,164 @@
-# Load necessary libraries
-library(readxl)
-library(readr)
-# Load if using RStudio (interactive session)
-library(rstudioapi)
-# Load for database manipulation
-library(sqldf)
-# Load for data manipulation
-library(dplyr)
-library(stringr)
-# Load for excel manipulation
-library(writexl)
-# Load for data visualisation
-library(tidyr)
-library(ggplot2)
-library(ggtext)
-library(plotly)
-library(ggimage)
-library(htmlwidgets)
-library(webshot)
-webshot::install_phantomjs()
-
-
-# Step 1: Data Settings ---------------------------------------------------
-
-# ---- Output folder for measure distribution plots (PNG) ----
-plot_out_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/fig_output/distribution_measures"
-
-# -----------------------------
-# MEASURE DISTRIBUTION PLOT (Plotly + icons) — AUTO-SAVE PNG PER SESSION
-# Saves to:
-# C:\Users\RobiDattatreya\OneDrive - Delft University of Technology\BEP\BranchInes\Scripts_inesdattatreya\fig_output\distribution_measures
-# -----------------------------
-
-# Load necessary libraries
-library(readxl)
-library(readr)
-library(rstudioapi)
-library(sqldf)
-library(dplyr)
-library(stringr)
-library(writexl)
-library(tidyr)
-library(ggplot2)
-library(ggtext)
-library(plotly)
-library(ggimage)
-library(htmlwidgets)
-library(webshot)
-library(base64enc)
-
-# Step 1: Data Settings ---------------------------------------------------
-
-scriptfolder_path <- dirname(rstudioapi::getActiveDocumentContext()$path)
-setwd(scriptfolder_path)
-
-functionfolder_path <- file.path(scriptfolder_path, "functions")
-
-dataset_path <- file.path(dirname(scriptfolder_path), "Datasets")
-data_input_path <- file.path("data_output", "GP2_income_25-24_sessions")
-
-# Output folder for PNGs (YOUR requested path)
-plot_out_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/fig_output/distribution_measures"
-if (!dir.exists(plot_out_dir)) dir.create(plot_out_dir, recursive = TRUE)
-
-github <- "vjcortesa"
-
-# ---------------------------------------------------------
-# Helper: Read all sheets from one Excel file into a list
-# ---------------------------------------------------------
-read_all_sheets <- function(file) {
-  sheet_names <- excel_sheets(file)
-  sheet_list <- lapply(sheet_names, function(sheet) read_excel(file, sheet = sheet))
-  names(sheet_list) <- sheet_names
-  sheet_list
-}
-
-# ---------------------------------------------------------
-# Helper: base64 encode icon file for Plotly images
-# ---------------------------------------------------------
-encode_b64 <- function(path) {
-  ext  <- tolower(tools::file_ext(path))
-  mime <- if (ext %in% c("jpg", "jpeg")) "image/jpeg" else if (ext == "svg") "image/svg+xml" else "image/png"
-  raw  <- readBin(path, "raw", n = file.info(path)$size)
-  paste0("data:", mime, ";base64,", base64enc::base64encode(raw))
-}
-
-# ---------------------------------------------------------
-# Find all session income distribution files and loop them
-# ---------------------------------------------------------
-files <- list.files(path = data_input_path, pattern = "\\.xlsx$", full.names = TRUE)
-
-cat("\n=== DEBUG: INPUT FILES ===\n")
-cat("[DEBUG] getwd():", getwd(), "\n")
-cat("[DEBUG] data_input_path:", data_input_path, "\n")
-cat("[DEBUG] data_input_path exists:", dir.exists(data_input_path), "\n")
-cat("[DEBUG] number of xlsx files found:", length(files), "\n")
-if (length(files) > 0) {
-  cat("[DEBUG] first 5 files:\n")
-  print(head(files, 5))
-} else {
-  cat("[DEBUG] No files found -> loop will not run.\n")
-}
-
-for (file in files) {
-  
-  income_distribution_dataset <- basename(file)
-  date_dataset <- sub(".*_(\\d{6})\\.xlsx$", "\\1", income_distribution_dataset)
-  
-  message("\n============================================")
-  message("Processing: ", income_distribution_dataset, " | date tag: ", date_dataset)
-  message("============================================")
-  
-  # Read all sheets for this file
-  sheet_list <- read_all_sheets(file)
-  
-  # Pull required tables
-  df_income_dist      <- sheet_list[["df_income_dist"]]
-  playerround         <- sheet_list[["playerround"]]
-  measuretype         <- sheet_list[["measuretype"]]
-  personalmeasure     <- sheet_list[["personalmeasure"]]
-  housemeasure        <- sheet_list[["housemeasure"]]
-  housegroup          <- sheet_list[["housegroup"]]
-  group               <- sheet_list[["group"]]
-  groupround          <- sheet_list[["groupround"]]
-  player              <- sheet_list[["player"]]
-  house               <- sheet_list[["house"]]
-  initialhousemeasure <- sheet_list[["initialhousemeasure"]]
-  
-  # Title for the plot
-  title_plot <- paste("Session:", df_income_dist[1, "gamesession_name"] %>% as.character())
-  
-  # File-safe session name for saving PNG
-  session_name <- df_income_dist[1, "gamesession_name"] %>% as.character()
-  session_name_safe <- gsub("[^A-Za-z0-9_\\-]+", "_", session_name)
-  
-  # -----------------------------
-  # Data prep (your original logic)
-  # -----------------------------
-  exclude_initial_measure <- FALSE  # TRUE = keep only initialhousemeasure = 0; FALSE = ignore this filter
-  initial_clause <- if (exclude_initial_measure) "initialhousemeasure = 0 AND" else ""
-  
-  housemeasure_filtered <- sqldf(sprintf("
-    SELECT 
-      id,
-      measuretype_id,
-      group_name,
-      player_code,
-      house_code,
-      groupround_round_number,
-      round_income,
-      short_alias,
-      cost_absolute AS measure_cost,
-      satisfaction_delta_once,
-      pluvial_protection_delta,
-      fluvial_protection_delta
-    FROM housemeasure
-    WHERE %s
-          player_code IS NOT NULL
-  ", initial_clause))
-  
-  personalmeasure_filtered <- sqldf("
-    SELECT 
-      id,
-      measuretype_id,
-      group_name,
-      player_code,
-      house_code,
-      groupround_round_number,
-      round_income,
-      short_alias,
-      calculated_costs AS measure_cost,
-      satisfaction_delta_once,
-      pluvial_protection_delta,
-      fluvial_protection_delta
-    FROM personalmeasure
-  ")
-  
-  measures_combined <- sqldf("
-    SELECT *, 'personalmeasure_filtered' AS source FROM personalmeasure_filtered
-    UNION ALL
-    SELECT *, 'housemeasure_filtered' AS source FROM housemeasure_filtered
-  ")
-  
-  measures_combined_counts <- measures_combined %>%
-    group_by(groupround_round_number, short_alias) %>%
-    summarise(count = n(), .groups = "drop")
-  
-  measures_text <- data.frame(
-    short_alias = c("Rainbarrel for recycling",
-                    "Waterproof walls, floors",
-                    "Green garden",
-                    "Self-activating wall",
-                    "Water pump installation",
-                    "Sandbags",
-                    "Modest house renovations",
-                    "Structural house changes",
-                    "Personal improvements",
-                    "Flood insurance"),
-    cost_reference = c(0,0,0,0,0,0,
-                       "% House cost",
-                       "% House cost",
-                       "% Round income",
-                       "% House cost"),
-    icons_path = c(file.path("icons","RainBarrel.png"),
-                   file.path("icons","WaterproofingWalls.png"),
-                   file.path("icons","GreenGarden.png"),
-                   file.path("icons","Self-ActivatingFloodWall.png"),
-                   file.path("icons","Waterpump.png"),
-                   file.path("icons","Sandbags.png"),
-                   file.path("icons","ModestHouseRenovations.png"),
-                   file.path("icons","StructuralHouseChanges.png"),
-                   file.path("icons","PersonalImprovements.png"),
-                   file.path("icons","FloodInsurance.png")),
-    plot_order = c(0,0,0,0,0,0,2,1,3,4),
-    stringsAsFactors = FALSE
-  )
-  
-  # join measuretype with measures_text
-  measuretype <- sqldf("
-    SELECT 
-      m.short_alias,
-      m.cost_absolute,
-      m.cost_percentage_income,
-      m.cost_percentage_house,
-      mt.cost_reference,
-      mt.plot_order,
-      mt.icons_path
-    FROM measuretype AS m
-    LEFT JOIN measures_text AS mt
-      ON m.short_alias = mt.short_alias
-    ORDER BY 
-      CASE
-      WHEN m.cost_absolute <> 0 THEN 1 ELSE 2 
-      END,
-      m.cost_absolute DESC,
-      mt.plot_order
-  ")
-  
-  # cost info label
-  measuretype <- measuretype %>%
-    mutate(
-      cost_info = case_when(
-        cost_absolute != 0 ~ paste0(cost_absolute/1000, "k"),
-        cost_percentage_income != 0 ~ paste0(cost_percentage_income, "% income"),
-        cost_percentage_house != 0 ~ paste0(cost_percentage_house, "% house cost"),
-        TRUE ~ "No cost"
-      )
-    )
-  
-  # factor ordering by measuretype order
-  measures_combined_counts$short_alias <- factor(
-    measures_combined_counts$short_alias,
-    levels = rev(measuretype$short_alias)
-  )
-  
-  measures_combined_counts <- measures_combined_counts %>%
-    left_join(measuretype %>% select(short_alias, icons_path, cost_info), by = "short_alias")
-  
-  measures_combined_counts$groupround_round_number <- factor(
-    measures_combined_counts$groupround_round_number,
-    levels = rev(sort(unique(measures_combined_counts$groupround_round_number)))
-  )
-  
-  rounds_colors <- c(
-    "1" = "#e0e0e0",
-    "2" = "#b3b3b3",
-    "3" = "#808080",
-    "4" = "#4d4d4d",
-    "5" = "#1a1a1a"
-  )
-  
-  df <- measures_combined_counts %>%
-    mutate(
-      groupround_round_number = as.factor(groupround_round_number),
-      label = paste0(short_alias, "<br>(", cost_info, ")")
-    )
-  
-  df$short_alias <- factor(df$short_alias, levels = rev(measuretype$short_alias))
-  
-  label_levels <- df %>%
-    distinct(short_alias, label) %>%
-    arrange(match(short_alias, levels(df$short_alias))) %>%
-    pull(label)
-  
-  df$label <- factor(df$label, levels = label_levels)
-  
-  # -----------------------------
-  # Plotly build
-  # -----------------------------
-  p <- plot_ly()
-  round_levels <- levels(df$groupround_round_number)
-  
-  for (r in round_levels) {
-    subdf <- df %>% filter(groupround_round_number == r)
-    
-    p <- add_trace(
-      p,
-      type = "bar",
-      orientation = "h",
-      x = subdf$count,
-      y = subdf$label,
-      name = r,
-      marker = list(color = rounds_colors[[r]]),
-      hovertemplate = paste(
-        "Measure: %{y}<br>",
-        "Round: ", r, "<br>",
-        "Count: %{x}<extra></extra>"
-      )
-    )
-  }
-  
-  # Icons mapping
-  icon_map <- df %>%
-    select(short_alias, label, icons_path) %>%
-    distinct() %>%
-    mutate(
-      icon_file = ifelse(
-        grepl("\\.(png|jpg|jpeg|svg)$", icons_path, ignore.case = TRUE),
-        icons_path,
-        paste0(icons_path, ".png")
-      )
-    ) %>%
-    filter(file.exists(icon_file)) %>%
-    mutate(src = vapply(icon_file, encode_b64, FUN.VALUE = character(1)))
-  
-  totals <- df %>% group_by(label) %>% summarize(total = sum(count, na.rm = TRUE), .groups = "drop")
-  x_max  <- max(totals$total, na.rm = TRUE)
-  x_off  <- -0.12 * x_max
-  
-  tick_vals <- pretty(c(0, x_max), n = 6)
-  
-  p <- layout(
-    p,
-    title = list(
-      text = paste0(
-        "Distribution of measures",
-        "<br><sub style='color:#666666;font-size:16px;'>",
-        title_plot,
-        "</sub>"
-      ),
-      x = 0.5,
-      xanchor = "center",
-      font = list(size = 22, color = "#333333")
-    ),
-    barmode = "stack",
-    xaxis = list(
-      title = "Count",
-      range = c(x_off * 1.5, x_max * 1.1),
-      tickmode = "array",
-      tickvals = tick_vals,
-      ticktext = tick_vals,
-      zeroline = TRUE,
-      zerolinecolor = "#aaaaaa",
-      zerolinewidth = 1
-    ),
-    yaxis = list(title = "Improvement type"),
-    legend = list(title = list(text = "Round Number")),
-    margin = list(l = 160)
-  )
-  
-  images_list <- lapply(seq_len(nrow(icon_map)), function(i) {
-    list(
-      source   = icon_map$src[i],
-      xref     = "x", yref = "y",
-      x        = x_off,
-      y        = as.character(icon_map$label[i]),
-      sizex    = 0.08 * x_max,
-      sizey    = 0.8,
-      xanchor  = "left",
-      yanchor  = "middle",
-      layer    = "above"
-    )
-  })
-  
-  p <- layout(p, images = images_list)
-  
-  # -----------------------------
-  # Save PNG per session
-  # -----------------------------
-  # Save the interactive plot to a temporary HTML file
-  html_file <- tempfile(fileext = ".html")
-  htmlwidgets::saveWidget(p, file = html_file, selfcontained = TRUE)
-  
-  png_file <- file.path(
-    plot_out_dir,
-    paste0("inesdattatreya_distribution_measures_", session_name_safe, "_", date_dataset, ".png")
-  )
-  
-  cat("\n[DEBUG] html_file:", html_file, "\n")
-  cat("[DEBUG] png_file:", png_file, "\n")
-  cat("[DEBUG] html exists:", file.exists(html_file), "\n")
-  cat("[DEBUG] out dir exists:", dir.exists(plot_out_dir), "\n")
-  
-  # Try to ensure phantomjs exists (webshot v1)
-  if ("install_phantomjs" %in% getNamespaceExports("webshot")) {
-    cat("[DEBUG] webshot::install_phantomjs() is available. Trying install (safe if already installed)...\n")
-    try(webshot::install_phantomjs(), silent = TRUE)
-  } else {
-    cat("[DEBUG] webshot::install_phantomjs() NOT available in your webshot package.\n")
-  }
-  
-  # Run webshot and catch any error
-  tryCatch({
-    webshot::webshot(
-      url = html_file,
-      file = png_file,
-      vwidth = 1600,
-      vheight = 1000,
-      zoom = 2
-    )
-    cat("[DEBUG] webshot finished OK\n")
-  }, error = function(e) {
-    cat("[DEBUG] webshot ERROR:", e$message, "\n")
-  })
-  
-  cat("[DEBUG] png exists after webshot:", file.exists(png_file), "\n")
-  
-  # List newest files in output folder
-  cat("[DEBUG] latest files in output folder:\n")
-  print(tail(list.files(plot_out_dir, full.names = TRUE), 20))
-}
-
 # ============================================================
-# GP3 IMPROVEMENTS — Measure distribution per round
-# + EXTRA: per class (only if the GP3 file contains classes)
-# Reads ONLY: data_output/GP3_improvements_25-24_sessions/Improv_dist_*.xlsx
-# Saves PNGs to: fig_output/distribution_measures (or your absolute path)
+# GP3 IMPROVEMENTS — Measure distribution per round (stable)
+# - Saves per session: all-classes + class 1/2/3 (if present)
+# - Uses webshot2 (Chrome) for PNG export
+# - Fixed icon mapping across sessions (same icons always)
+# - Bigger titles + bigger axis text + bigger legend
+# - Always saves the "all classes" plot for every session
+# - Class plots use class-specific round palettes (light->dark) like your working code
 # ============================================================
 
 # -----------------------------
-# Libraries
+# Packages
 # -----------------------------
 library(readxl)
-library(rstudioapi)
-library(sqldf)
 library(dplyr)
-library(stringr)
 library(tidyr)
+library(stringr)
 library(plotly)
 library(htmlwidgets)
-library(webshot)
+library(webshot2)
 library(base64enc)
-
-# Install PhantomJS if needed (safe to run if already installed)
-try(webshot::install_phantomjs(), silent = TRUE)
+library(rstudioapi)
+library(writexl)
 
 # -----------------------------
-# Paths / Settings
+# Paths
 # -----------------------------
-# Get the directory of the currently active RStudio script
 scriptfolder_path <- dirname(rstudioapi::getActiveDocumentContext()$path)
 setwd(scriptfolder_path)
 
-# Input directory: ONLY GP3 improvements outputs
 data_input_path <- file.path("data_output", "GP3_improvements_25-24_sessions")
 
-# Output directory for PNG files
-plot_out_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/fig_output/distribution_measures"
-if (!dir.exists(plot_out_dir)) dir.create(plot_out_dir, recursive = TRUE)
+plot_out_dir <- file.path(
+  scriptfolder_path,
+  "fig_output",
+  "distribution_measures"
+)
+dir.create(plot_out_dir, recursive = TRUE, showWarnings = FALSE)
+
+icons_dir <- file.path(scriptfolder_path, "icons")
+# LCA class files (risk perception classes) live in data_output
+lca_dir <- file.path(scriptfolder_path, "data_output")
 
 # -----------------------------
-# Helper functions
+# Helpers
 # -----------------------------
-
-# Read all sheets from a single Excel file into a named list
 read_all_sheets <- function(file) {
   sheet_names <- excel_sheets(file)
-  sheet_list <- lapply(sheet_names, function(sheet) read_excel(file, sheet = sheet))
-  names(sheet_list) <- sheet_names
-  sheet_list
+  out <- lapply(sheet_names, function(s) read_excel(file, sheet = s))
+  names(out) <- sheet_names
+  out
 }
 
-# Encode an image file as base64 for embedding icons in Plotly
 encode_b64 <- function(path) {
   ext  <- tolower(tools::file_ext(path))
   mime <- if (ext %in% c("jpg", "jpeg")) "image/jpeg" else if (ext == "svg") "image/svg+xml" else "image/png"
   raw  <- readBin(path, "raw", n = file.info(path)$size)
   paste0("data:", mime, ";base64,", base64enc::base64encode(raw))
 }
+# Find a likely player id column in a dataframe
+detect_id_col <- function(df) {
+  candidates <- c("player_code", "code", "Q_PlayerNumber", "player", "player_id")
+  hit <- candidates[candidates %in% names(df)]
+  if (length(hit) == 0) return(NA_character_)
+  hit[1]
+}
+
+# Read LCA class file for a session (based on YYMM from date tag)
+read_lca_for_session <- function(date_dataset, lca_dir) {
+  yymm <- substr(date_dataset, 1, 4)  # 240924 -> 2409
+  pattern <- paste0("^inesdattatreya_G2_riskp_dist_", yymm, ".*\\.xlsx$")
+  files <- list.files(lca_dir, pattern = pattern, full.names = TRUE)
+  
+  if (length(files) == 0) {
+    warning("No LCA file found for YYMM=", yymm, " in ", lca_dir)
+    return(NULL)
+  }
+  
+  f <- files[1]
+  sheets <- excel_sheets(f)
+  df <- read_excel(f, sheet = sheets[1]) |> as.data.frame()
+  
+  # Normalize columns
+  if (!("lca_class" %in% names(df))) {
+    # allow variants
+    alt <- c("LCA_class", "class", "classes", "riskp_class")
+    alt_hit <- alt[alt %in% names(df)]
+    if (length(alt_hit) > 0) df$lca_class <- df[[alt_hit[1]]]
+  }
+  
+  id_col <- detect_id_col(df)
+  if (is.na(id_col)) stop("LCA file has no recognizable player id column: ", f)
+  if (!("lca_class" %in% names(df))) stop("LCA file missing lca_class column: ", f)
+  
+  out <- df |>
+    transmute(
+      player_code = tolower(str_trim(as.character(.data[[id_col]]))),
+      lca_class   = as.character(lca_class)
+    ) |>
+    filter(!is.na(player_code), player_code != "", !is.na(lca_class), lca_class != "") |>
+    distinct(player_code, .keep_all = TRUE)
+  
+  out
+}
+# Detect round-of-purchase column in a dataframe
+detect_bought_round_col <- function(df) {
+  candidates <- c(
+    "bought_in_round",
+    "bought_round",
+    "round_bought",
+    "purchase_round",
+    "groupround_round_number"
+  )
+  hit <- candidates[candidates %in% names(df)]
+  if (length(hit) == 0) {
+    stop(
+      "No round-of-purchase column found. Available columns are:\n",
+      paste(names(df), collapse = ", ")
+    )
+  }
+  hit[1]
+}
 
 # -----------------------------
-# Color definitions
+# Measure text + icons (fixed mapping across sessions)
+# -----------------------------
+measures_text <- data.frame(
+  short_alias = c(
+    "Rainbarrel for recycling",
+    "Underground rainbarrel",
+    "Waterproof walls, floors",
+    "Green garden",
+    "Self-activating wall",
+    "Water pump installation",
+    "Sandbags",
+    "Modest house renovations",
+    "Structural house changes",
+    "Personal improvements",
+    "Flood insurance"
+  ),
+  icons_path = file.path(
+    icons_dir,
+    c(
+      "Barrel.png",
+      "Barrel.png",
+      "WaterproofingWalls.png",
+      "GreenGarden.png",
+      "Self-ActivatingFloodWall.png",
+      "Waterpump.png",
+      "Sandbags.png",
+      "ModestHouseRenovations.png",
+      "StructuralHouseChanges.png",
+      "PersonalImprovements.png",
+      "FloodInsurance.png"
+    )
+  ),
+  stringsAsFactors = FALSE
+)
+
+# -----------------------------
+# Color definitions (KEEP SIMPLE, like your working code)
 # -----------------------------
 
 # Base colors per class
@@ -490,7 +168,7 @@ class_base_colors <- c(
   "3" = "#79BCC5"
 )
 
-# Default grayscale colors for overall plots
+# Default grayscale palette for rounds (ALL CLASSES)
 rounds_colors_default <- c(
   "1" = "#e0e0e0",
   "2" = "#b3b3b3",
@@ -521,490 +199,415 @@ blend_hex <- function(hex1, hex2 = "#FFFFFF", alpha = 0.5) {
   rgb_to_hex(out)
 }
 
-# Generate round-specific colors as tints of a class color
+# Generate round-specific colors as tints/shades of a class color (LIKE YOUR WORKING CODE)
 round_colors_for_class <- function(base_hex) {
   c(
-    "1" = blend_hex(base_hex, "#FFFFFF", 0.65),
-    "2" = blend_hex(base_hex, "#FFFFFF", 0.35),
-    "3" = base_hex,
-    "4" = blend_hex(base_hex, "#000000", 0.15),
-    "5" = blend_hex(base_hex, "#000000", 0.30)
+    "1" = blend_hex(base_hex, "#FFFFFF", 0.65),  # very light
+    "2" = blend_hex(base_hex, "#FFFFFF", 0.35),  # light
+    "3" = base_hex,                              # base
+    "4" = blend_hex(base_hex, "#000000", 0.15),  # dark
+    "5" = blend_hex(base_hex, "#000000", 0.30)   # darker
   )
 }
 
 # -----------------------------
-# Select GP3 improvement files
+# BIG FONT SETTINGS (thesis)
+# -----------------------------
+TITLE_MAIN_SIZE   <- 36
+TITLE_SUB_SIZE    <- 26
+AXIS_TITLE_SIZE   <- 26
+AXIS_TICK_SIZE    <- 22
+LEGEND_TITLE_SIZE <- 24
+LEGEND_TEXT_SIZE  <- 22
+
+# -----------------------------
+# Plot function
+# -----------------------------
+build_plot_and_save <- function(df_counts, title_sub, png_path, measuretype, palette = rounds_colors_default) {
+  
+  if (is.null(df_counts) || nrow(df_counts) == 0) return(invisible(FALSE))
+  
+  df <- df_counts %>%
+    left_join(measuretype %>% select(short_alias, icons_path, cost_info), by = "short_alias") %>%
+    mutate(
+      label = paste0(short_alias, "<br>(", cost_info, ")"),
+      groupround_round_number = factor(groupround_round_number)
+    )
+  
+  df$label <- factor(df$label, levels = unique(df$label))
+  
+  p <- plot_ly()
+  for (r in levels(df$groupround_round_number)) {
+    sub <- df %>% filter(groupround_round_number == r)
+    
+    p <- add_trace(
+      p,
+      type = "bar",
+      orientation = "h",
+      x = sub$count,
+      y = sub$label,
+      name = paste0("Round ", r),
+      marker = list(color = palette[[as.character(r)]]),
+      hovertemplate = paste(
+        "Measure: %{y}<br>",
+        "Round: ", r, "<br>",
+        "Count: %{x}<extra></extra>"
+      )
+    )
+  }
+  
+  icon_map <- df %>%
+    distinct(label, icons_path) %>%
+    filter(!is.na(icons_path), file.exists(icons_path)) %>%
+    mutate(src = vapply(icons_path, encode_b64, FUN.VALUE = character(1)))
+  
+  totals <- df %>%
+    group_by(label) %>%
+    summarise(total = sum(count, na.rm = TRUE), .groups = "drop")
+  x_max <- max(totals$total, na.rm = TRUE)
+  if (!is.finite(x_max) || x_max <= 0) x_max <- 1
+  x_off <- -0.12 * x_max
+  
+  p <- layout(
+    p,
+    title = list(
+      text = paste0(
+        "<b style='font-size:", TITLE_MAIN_SIZE, "px;'>Distribution of measures</b><br>",
+        "<span style='font-size:", TITLE_SUB_SIZE, "px;color:#444444;'>", title_sub, "</span>"
+      ),
+      x = 0.5,
+      xanchor = "center"
+    ),
+    barmode = "stack",
+    xaxis = list(
+      title = list(text = "<b>Count</b>", font = list(size = AXIS_TITLE_SIZE)),
+      range = c(x_off * 1.5, x_max * 1.1),
+      tickfont = list(size = AXIS_TICK_SIZE)
+    ),
+    yaxis = list(
+      title = list(text = "<b>Improvement type</b>", font = list(size = AXIS_TITLE_SIZE)),
+      tickfont = list(size = AXIS_TICK_SIZE)
+    ),
+    legend = list(
+      title = list(text = "<b>Round</b>", font = list(size = LEGEND_TITLE_SIZE)),
+      font = list(size = LEGEND_TEXT_SIZE)
+    ),
+    margin = list(l = 220, r = 40, t = 120, b = 80)
+  )
+  
+  images_list <- lapply(seq_len(nrow(icon_map)), function(i) {
+    list(
+      source  = icon_map$src[i],
+      xref    = "x",
+      yref    = "y",
+      x       = x_off,
+      y       = as.character(icon_map$label[i]),
+      sizex   = 0.08 * x_max,
+      sizey   = 0.8,
+      xanchor = "left",
+      yanchor = "middle",
+      layer   = "above"
+    )
+  })
+  p <- layout(p, images = images_list)
+  
+  html_file <- tempfile(fileext = ".html")
+  htmlwidgets::saveWidget(p, html_file, selfcontained = TRUE)
+  
+  cat("[DEBUG] Will write:", png_path, "\n")
+  webshot2::webshot(
+    url = html_file,
+    file = png_path,
+    vwidth = 1600,
+    vheight = 1000,
+    zoom = 2
+  )
+  
+  invisible(TRUE)
+}
+# -----------------------------
+# Helpers for LCA class linkage
+# -----------------------------
+
+# Detect a player identifier column in a dataframe
+detect_id_col <- function(df) {
+  candidates <- c(
+    "player_code",
+    "code",
+    "Q_PlayerNumber",
+    "player",
+    "player_id"
+  )
+  hit <- candidates[candidates %in% names(df)]
+  if (length(hit) == 0) {
+    stop("No recognizable player id column found. Columns are: ",
+         paste(names(df), collapse = ", "))
+  }
+  hit[1]
+}
+
+# Read LCA class file for a session (based on YYMM from date tag)
+read_lca_for_session <- function(date_dataset, lca_dir) {
+  
+  yymm <- substr(date_dataset, 1, 4)  # e.g. 240924 -> 2409
+  
+  pattern <- paste0("^inesdattatreya_G2_riskp_dist_", yymm, ".*\\.xlsx$")
+  files <- list.files(lca_dir, pattern = pattern, full.names = TRUE)
+  
+  if (length(files) == 0) {
+    warning("No LCA file found for YYMM = ", yymm)
+    return(NULL)
+  }
+  
+  f <- files[1]
+  sheets <- excel_sheets(f)
+  df <- read_excel(f, sheet = sheets[1]) |> as.data.frame()
+  
+  # Normalize lca_class column
+  if (!("lca_class" %in% names(df))) {
+    alt <- c("LCA_class", "class", "classes", "riskp_class")
+    alt_hit <- alt[alt %in% names(df)]
+    if (length(alt_hit) == 0) {
+      stop("No lca_class column found in ", basename(f))
+    }
+    df$lca_class <- df[[alt_hit[1]]]
+  }
+  
+  id_col <- detect_id_col(df)
+  
+  df |>
+    transmute(
+      player_code = tolower(str_trim(as.character(.data[[id_col]]))),
+      lca_class   = as.character(lca_class)
+    ) |>
+    filter(
+      !is.na(player_code),
+      player_code != "",
+      !is.na(lca_class),
+      lca_class %in% c("1","2","3")
+    ) |>
+    distinct(player_code, .keep_all = TRUE)
+}
+
+# -----------------------------
+# Main loop
 # -----------------------------
 files <- list.files(
-  path = data_input_path,
+  data_input_path,
   pattern = "^Improv_dist_.*\\.xlsx$",
   full.names = TRUE
 )
 
-cat("\n=== DEBUG: GP3 FILES FOUND ===\n")
-cat("[DEBUG] Working directory:", getwd(), "\n")
-cat("[DEBUG] Input path:", data_input_path, "\n")
-cat("[DEBUG] Path exists:", dir.exists(data_input_path), "\n")
-cat("[DEBUG] Number of files:", length(files), "\n")
+cat("\n[DEBUG] GP3 files found:", length(files), "\n")
 print(files)
 
-if (length(files) == 0) stop("No GP3 Improv_dist_*.xlsx files found in the input directory.")
+if (length(files) == 0) stop("No Improv_dist_*.xlsx files found.")
 
-# -----------------------------
-# Loop over each session file
-# -----------------------------
 for (file in files) {
   
-  income_distribution_dataset <- basename(file)
-  date_dataset <- sub(".*_(\\d{6})\\.xlsx$", "\\1", income_distribution_dataset)
+  session_tag <- tools::file_path_sans_ext(basename(file))  # e.g. Improv_dist_240924
+  date_dataset <- sub(".*_(\\d{6})$", "\\1", session_tag)
+  
+  session_name <- session_tag
+  session_name_safe <- gsub("[^A-Za-z0-9_\\-]+", "_", session_name)
   
   cat("\n============================================\n")
-  cat("Processing:", income_distribution_dataset, "| Date tag:", date_dataset, "\n")
+  cat("Processing (GP3):", basename(file), "| Date tag:", date_dataset, "\n")
   cat("============================================\n")
   
-  # Read all sheets from the Excel file
   sheet_list <- read_all_sheets(file)
-  
-  # Extract required tables (may be NULL if not present)
-  df_income_dist      <- sheet_list[["df_income_dist"]]
-  measuretype         <- sheet_list[["measuretype"]]
-  personalmeasure     <- sheet_list[["personalmeasure"]]
-  housemeasure        <- sheet_list[["housemeasure"]]
-  player              <- sheet_list[["player"]]
-  initialhousemeasure <- sheet_list[["initialhousemeasure"]]
-  
-  # Print available sheet names for debugging
   cat("[DEBUG] Sheets present:\n")
   print(names(sheet_list))
   
-  # Determine session name (fallback to filename if missing)
-  if (!is.null(df_income_dist) &&
-      "gamesession_name" %in% names(df_income_dist) &&
-      nrow(df_income_dist) > 0) {
-    session_name <- as.character(df_income_dist[1, "gamesession_name"][[1]])
+  measuretype_raw <- as.data.frame(sheet_list[["measuretype"]])
+  personalmeasure <- as.data.frame(sheet_list[["personalmeasure"]])
+  housemeasure    <- as.data.frame(sheet_list[["housemeasure"]])
+  
+  # -----------------------------
+  # NEW: Load LCA classes for this session and join to measures
+  # -----------------------------
+  lca_lookup <- read_lca_for_session(date_dataset = date_dataset, lca_dir = lca_dir)
+  
+  # Detect id columns in the measures sheets
+  id_personal <- detect_id_col(personalmeasure)
+  id_house    <- detect_id_col(housemeasure)
+  
+  if (is.na(id_personal) || is.na(id_house)) {
+    stop("Could not detect player id column in personalmeasure/housemeasure for file: ", basename(file))
+  }
+  
+  # Build combined measures with player_code + lca_class
+  personal_filtered <- personalmeasure %>%
+    transmute(
+      player_code = tolower(str_trim(as.character(.data[[id_personal]]))),
+      groupround_round_number,
+      short_alias,
+      source = "personal"
+    )
+  
+  house_filtered <- housemeasure %>%
+    transmute(
+      player_code = tolower(str_trim(as.character(.data[[id_house]]))),
+      groupround_round_number,
+      short_alias,
+      source = "house"
+    )
+  
+  measures_combined <- bind_rows(personal_filtered, house_filtered)
+  
+  # Join LCA class (risk perception classes)
+  if (!is.null(lca_lookup)) {
+    measures_combined <- measures_combined %>%
+      left_join(lca_lookup, by = "player_code")
   } else {
-    session_name <- tools::file_path_sans_ext(income_distribution_dataset)
+    measures_combined$lca_class <- NA_character_
   }
   
-  title_plot <- paste("Session:", session_name)
-  session_name_safe <- gsub("[^A-Za-z0-9_\\-]+", "_", session_name)
   
-  # Ensure data frames
-  personalmeasure <- as.data.frame(personalmeasure)
-  housemeasure    <- as.data.frame(housemeasure)
-  measuretype     <- as.data.frame(measuretype)
+
   
-  # -----------------------------
-  # Ensure the presence of a 'classes' column
-  # -----------------------------
-  
-  # Normalize 'class' to 'classes' if needed
-  norm_classes <- function(df) {
-    if (is.null(df)) return(df)
-    df <- as.data.frame(df)
-    if (!("classes" %in% names(df)) && ("class" %in% names(df))) {
-      df$classes <- df$class
-    }
-    df
-  }
-  
-  personalmeasure <- norm_classes(personalmeasure)
-  housemeasure    <- norm_classes(housemeasure)
-  player          <- norm_classes(player)
-  
-  # Build a lookup table for classes (prefer personalmeasure, fallback to player)
-  classes_lookup <- NULL
-  
-  if (!is.null(personalmeasure) && "classes" %in% names(personalmeasure)) {
-    classes_lookup <- personalmeasure %>%
-      transmute(
-        player_code = as.character(player_code),
-        groupround_round_number = as.character(groupround_round_number),
-        classes = as.character(classes)
-      ) %>%
-      filter(!is.na(player_code), player_code != "") %>%
-      distinct()
-  } else if (!is.null(player) &&
-             "classes" %in% names(player) &&
-             "player_code" %in% names(player)) {
-    classes_lookup <- player %>%
-      transmute(
-        player_code = as.character(player_code),
-        classes = as.character(classes)
-      ) %>%
-      filter(!is.na(player_code), player_code != "") %>%
-      distinct()
-  }
-  
-  # Inject classes into housemeasure if missing
-  if (!is.null(classes_lookup) && !("classes" %in% names(housemeasure))) {
-    if (all(c("player_code", "groupround_round_number") %in% names(housemeasure))) {
-      housemeasure <- housemeasure %>%
-        mutate(
-          player_code = as.character(player_code),
-          groupround_round_number = as.character(groupround_round_number)
-        ) %>%
-        left_join(classes_lookup,
-                  by = c("player_code", "groupround_round_number"))
-    } else if ("player_code" %in% names(housemeasure)) {
-      housemeasure <- housemeasure %>%
-        mutate(player_code = as.character(player_code)) %>%
-        left_join(classes_lookup %>% select(player_code, classes) %>% distinct(),
-                  by = "player_code")
-    }
-  }
-  
-  # -----------------------------
-  # Filter logic
-  # -----------------------------
-  exclude_initial_measure <- FALSE
-  initial_clause <- if (exclude_initial_measure) "initialhousemeasure = 0 AND" else ""
-  
-  # Filter house measures (safe handling of missing classes)
-  housemeasure_filtered <- sqldf(sprintf("
-    SELECT
-      id,
-      measuretype_id,
-      group_name,
-      player_code,
-      house_code,
-      %s
-      groupround_round_number,
-      round_income,
-      short_alias,
-      cost_absolute AS measure_cost,
-      satisfaction_delta_once,
-      pluvial_protection_delta,
-      fluvial_protection_delta
-    FROM housemeasure
-    WHERE %s
-          player_code IS NOT NULL
-  ",
-                                         if ("classes" %in% names(housemeasure)) "classes," else "NULL AS classes,",
-                                         initial_clause
-  ))
-  
-  # Filter personal measures (safe handling of missing classes)
-  personalmeasure_filtered <- sqldf(sprintf("
-    SELECT
-      id,
-      measuretype_id,
-      group_name,
-      player_code,
-      house_code,
-      %s
-      groupround_round_number,
-      round_income,
-      short_alias,
-      calculated_costs AS measure_cost,
-      satisfaction_delta_once,
-      pluvial_protection_delta,
-      fluvial_protection_delta
-    FROM personalmeasure
-  ",
-                                            if ("classes" %in% names(personalmeasure)) "classes," else "NULL AS classes,"
-  ))
-  
-  # Combine personal and house measures
-  measures_combined <- sqldf("
-    SELECT *, 'personal' AS source FROM personalmeasure_filtered
-    UNION ALL
-    SELECT *, 'house'    AS source FROM housemeasure_filtered
-  ")
-  
-  # -----------------------------
-  # Count measures per round
-  # -----------------------------
-  measures_combined_counts <- measures_combined %>%
+  # Count (all classes)
+  counts_all <- measures_combined %>%
     group_by(groupround_round_number, short_alias) %>%
-    summarise(count = n(), .groups = 'drop')
-  # -----------------------------
-  # Measure labels and icon mapping
-  # -----------------------------
-  measures_text <- data.frame(
-    short_alias = c(
-      "Rainbarrel for recycling",
-      "Waterproof walls, floors",
-      "Green garden",
-      "Self-activating wall",
-      "Water pump installation",
-      "Sandbags",
-      "Modest house renovations",
-      "Structural house changes",
-      "Personal improvements",
-      "Flood insurance"
-    ),
-    cost_reference = c(
-      0, 0, 0, 0, 0, 0,
-      "% House cost",
-      "% House cost",
-      "% Round income",
-      "% House cost"
-    ),
-    icons_path = c(
-      file.path("icons","RainBarrel.png"),
-      file.path("icons","WaterproofingWalls.png"),
-      file.path("icons","GreenGarden.png"),
-      file.path("icons","Self-ActivatingFloodWall.png"),
-      file.path("icons","Waterpump.png"),
-      file.path("icons","Sandbags.png"),
-      file.path("icons","ModestHouseRenovations.png"),
-      file.path("icons","StructuralHouseChanges.png"),
-      file.path("icons","PersonalImprovements.png"),
-      file.path("icons","FloodInsurance.png")
-    ),
-    plot_order = c(0,0,0,0,0,0,2,1,3,4),
-    stringsAsFactors = FALSE
-  )
+    summarise(count = n(), .groups = "drop")
   
-  # Join measure metadata with text and icon definitions
-  measuretype <- sqldf("
-    SELECT
-      m.short_alias,
-      m.cost_absolute,
-      m.cost_percentage_income,
-      m.cost_percentage_house,
-      mt.cost_reference,
-      mt.plot_order,
-      mt.icons_path
-    FROM measuretype AS m
-    LEFT JOIN measures_text AS mt
-      ON m.short_alias = mt.short_alias
-    ORDER BY
-      CASE
-        WHEN m.cost_absolute <> 0 THEN 1 ELSE 2
-      END,
-      m.cost_absolute DESC,
-      mt.plot_order
-  ")
-  
-  # Create readable cost labels
-  measuretype <- measuretype %>%
+  # Build measuretype with fixed icon mapping + cost info
+  measuretype <- measuretype_raw %>%
+    left_join(measures_text, by = "short_alias", suffix = c("_sheet", "_map")) %>%
     mutate(
-      cost_info = case_when(
-        cost_absolute != 0 ~ paste0(cost_absolute/1000, "k"),
-        cost_percentage_income != 0 ~ paste0(cost_percentage_income, "% income"),
-        cost_percentage_house != 0 ~ paste0(cost_percentage_house, "% house cost"),
+      icons_path = icons_path_map,
+      cost_info = dplyr::case_when(
+        !is.na(cost_absolute) & cost_absolute != 0 ~ paste0(cost_absolute / 1000, "k"),
+        !is.na(cost_percentage_income) & cost_percentage_income != 0 ~ paste0(cost_percentage_income, "% income"),
+        !is.na(cost_percentage_house) & cost_percentage_house != 0 ~ paste0(cost_percentage_house, "% house cost"),
         TRUE ~ "No cost"
       )
-    )
+    ) %>%
+    select(short_alias, icons_path, cost_info)
   
-  # Set factor order for measures
-  measures_combined_counts$short_alias <- factor(
-    measures_combined_counts$short_alias,
-    levels = rev(measuretype$short_alias)
-  )
+
   
-  # Join icons and cost info to counts
-  measures_combined_counts <- measures_combined_counts %>%
-    left_join(
-      measuretype %>% select(short_alias, icons_path, cost_info),
-      by = "short_alias"
-    )
+  # ============================================================
+  # Excel summary — Top rounds by purchases (bought-in-round)
+  # Separate for HOUSE and PERSONAL measures
+  # ============================================================
+  cat("[DEBUG] Start session file:", basename(file), "\n")
   
-  # Set factor order for rounds
-  measures_combined_counts$groupround_round_number <- factor(
-    measures_combined_counts$groupround_round_number,
-    levels = rev(sort(unique(measures_combined_counts$groupround_round_number)))
-  )
+  
+  clean_round <- function(x) as.integer(str_trim(as.character(x)))
+  
+  # Detect correct round columns
+  round_col_house    <- detect_bought_round_col(housemeasure)
+  round_col_personal <- detect_bought_round_col(personalmeasure)
   
   # -----------------------------
-  # Plot builder function
+  # HOUSE measures
   # -----------------------------
-  build_plot_and_save <- function(df_counts, title_sub, png_path, class_id = NULL) {
-    
-    # Skip plotting if there is no data
-    if (nrow(df_counts) == 0) {
-      cat("[WARN] No data to plot for:", title_sub, "\n")
-      return(invisible(FALSE))
-    }
-    
-    # Prepare labels
-    dfp <- df_counts %>%
-      mutate(
-        groupround_round_number = as.factor(groupround_round_number),
-        label = paste0(short_alias, "<br>(", cost_info, ")")
-      )
-    
-    dfp$short_alias <- factor(dfp$short_alias, levels = rev(measuretype$short_alias))
-    
-    label_levels <- dfp %>%
-      distinct(short_alias, label) %>%
-      arrange(match(short_alias, levels(dfp$short_alias))) %>%
-      pull(label)
-    
-    dfp$label <- factor(dfp$label, levels = label_levels)
-    
-    # Select color palette
-    if (is.null(class_id)) {
-      round_palette <- rounds_colors_default
-    } else {
-      round_palette <- round_colors_for_class(class_base_colors[[as.character(class_id)]])
-    }
-    
-    # Build Plotly stacked bar chart
-    p <- plot_ly()
-    round_levels <- levels(dfp$groupround_round_number)
-    
-    for (r in round_levels) {
-      subdf <- dfp %>% filter(groupround_round_number == r)
-      
-      p <- add_trace(
-        p,
-        type = "bar",
-        orientation = "h",
-        x = subdf$count,
-        y = subdf$label,
-        name = paste0("Round ", r),
-        marker = list(color = round_palette[[as.character(r)]]),
-        hovertemplate = paste(
-          "Measure: %{y}<br>",
-          "Round: ", r, "<br>",
-          "Count: %{x}<extra></extra>"
-        )
-      )
-    }
-    
-    # Map icons to measures
-    icon_map <- dfp %>%
-      select(short_alias, label, icons_path) %>%
-      distinct() %>%
-      mutate(
-        icon_file = ifelse(
-          grepl("\\.(png|jpg|jpeg|svg)$", icons_path, ignore.case = TRUE),
-          icons_path,
-          paste0(icons_path, ".png")
-        )
-      ) %>%
-      filter(file.exists(icon_file)) %>%
-      mutate(src = vapply(icon_file, encode_b64, FUN.VALUE = character(1)))
-    
-    # Compute axis limits
-    totals <- dfp %>%
-      group_by(label) %>%
-      summarise(total = sum(count), .groups = "drop")
-    
-    x_max <- max(totals$total)
-    if (!is.finite(x_max) || x_max <= 0) x_max <- 1
-    x_off <- -0.12 * x_max
-    
-    # Layout configuration
-    p <- layout(
-      p,
-      title = list(
-        text = paste0(
-          "Distribution of measures",
-          "<br><sub style='color:#666666;font-size:16px;'>",
-          title_sub,
-          "</sub>"
-        ),
-        x = 0.5
-      ),
-      barmode = "stack",
-      xaxis = list(
-        title = "Count",
-        range = c(x_off * 1.5, x_max * 1.1),
-        zeroline = TRUE
-      ),
-      yaxis = list(title = "Improvement type"),
-      legend = list(title = list(text = "Round")),
-      margin = list(l = 160)
-    )
-    
-    # Add icons to the plot
-    images_list <- lapply(seq_len(nrow(icon_map)), function(i) {
-      list(
-        source  = icon_map$src[i],
-        xref    = "x",
-        yref    = "y",
-        x       = x_off,
-        y       = as.character(icon_map$label[i]),
-        sizex   = 0.08 * x_max,
-        sizey   = 0.8,
-        xanchor = "left",
-        yanchor = "middle"
-      )
-    })
-    
-    p <- layout(p, images = images_list)
-    
-    # Save the plot as PNG via webshot
-    html_file <- tempfile(fileext = ".html")
-    saveWidget(p, html_file, selfcontained = TRUE)
-    
-    if (file.exists(png_path)) unlink(png_path)
-    
-    webshot(
-      url = html_file,
-      file = png_path,
-      vwidth = 1600,
-      vheight = 1000,
-      zoom = 2
-    )
-    
-    invisible(TRUE)
-  }
+  house_round_summary <- housemeasure %>%
+    transmute(
+      round_number = clean_round(.data[[round_col_house]])
+    ) %>%
+    filter(!is.na(round_number)) %>%
+    group_by(round_number) %>%
+    summarise(
+      n_house_measures = n(),
+      .groups = "drop"
+    ) %>%
+    arrange(desc(n_house_measures))
+  
+  top3_house <- house_round_summary %>%
+    slice_head(n = 3) %>%
+    mutate(rank = row_number())
   
   # -----------------------------
-  # Overall plot (all classes combined)
+  # PERSONAL measures
   # -----------------------------
-  png_file <- file.path(
+  personal_round_summary <- personalmeasure %>%
+    transmute(
+      round_number = clean_round(.data[[round_col_personal]])
+    ) %>%
+    filter(!is.na(round_number)) %>%
+    group_by(round_number) %>%
+    summarise(
+      n_personal_measures = n(),
+      .groups = "drop"
+    ) %>%
+    arrange(desc(n_personal_measures))
+  
+  top3_personal <- personal_round_summary %>%
+    slice_head(n = 3) %>%
+    mutate(rank = row_number())
+  
+  # -----------------------------
+  # Write Excel
+  # -----------------------------
+  out_xlsx <- file.path(
     plot_out_dir,
-    paste0(
-      "inesdattatreya_distribution_measures_",
-      session_name_safe, "_", date_dataset, ".png"
-    )
+    paste0("session_", session_name_safe, "_top_rounds_bought_in_round_", date_dataset, ".xlsx")
+  )
+  
+  writexl::write_xlsx(
+    x = list(
+      house_round_counts    = house_round_summary,
+      house_top3_rounds     = top3_house,
+      personal_round_counts = personal_round_summary,
+      personal_top3_rounds  = top3_personal
+    ),
+    path = out_xlsx
+  )
+  
+  cat("[DEBUG] Saved bought-in-round Excel:", out_xlsx, "\n")
+  
+  
+  
+  # -----------------------------
+  # Save ALL CLASSES (grayscale)
+  # -----------------------------
+  png_all <- file.path(
+    plot_out_dir,
+    paste0("session_", session_name_safe, "_all_classes_", date_dataset, ".png")
   )
   
   build_plot_and_save(
-    df_counts = measures_combined_counts,
-    title_sub = title_plot,
-    png_path  = png_file
+    df_counts = counts_all,
+    title_sub = paste0("Session: ", session_name, " — All classes"),
+    png_path  = png_all,
+    measuretype = measuretype,
+    palette = rounds_colors_default
   )
   
   # -----------------------------
-  # Class-specific plots
+  # Save class plots (class-specific palettes)
   # -----------------------------
-  if ("classes" %in% names(measures_combined)) {
-    
-    class_levels <- measures_combined %>%
-      mutate(classes = as.character(classes)) %>%
-      filter(!is.na(classes), classes != "") %>%
-      distinct(classes) %>%
-      pull(classes)
-    
-    class_levels <- intersect(c("1","2","3"), class_levels)
-    
-    for (cls in class_levels) {
-      
-      df_cls <- measures_combined %>%
-        mutate(classes = as.character(classes)) %>%
-        filter(classes == cls)
-      
-      measures_counts_cls <- df_cls %>%
-        group_by(groupround_round_number, short_alias) %>%
-        summarise(count = n(), .groups = "drop") %>%
-        left_join(
-          measuretype %>% select(short_alias, icons_path, cost_info),
-          by = "short_alias"
-        )
-      
-      png_file_cls <- file.path(
-        plot_out_dir,
-        paste0(
-          "inesdattatreya_distribution_measures_",
-          session_name_safe, "_class", cls, "_", date_dataset, ".png"
-        )
-      )
-      
-      build_plot_and_save(
-        df_counts = measures_counts_cls,
-        title_sub = paste("Session:", session_name, "— Class", cls),
-        png_path  = png_file_cls,
-        class_id  = cls
-      )
-    }
-  }
+  class_levels <- measures_combined %>%
+    filter(!is.na(lca_class), lca_class != "") %>%
+    distinct(lca_class) %>%
+    pull(lca_class)
   
-} # End loop over files
+  for (cls in intersect(c("1","2","3"), class_levels)) {
+    
+    counts_cls <- measures_combined %>%
+      filter(lca_class == cls) %>%
+      group_by(groupround_round_number, short_alias) %>%
+      summarise(count = n(), .groups = "drop")
+    
+    
+    png_cls <- file.path(
+      plot_out_dir,
+      paste0("session_", session_name_safe, "_class_", cls, "_", date_dataset, ".png")
+    )
+    
+    class_palette <- round_colors_for_class(class_base_colors[[as.character(cls)]])
+    
+    build_plot_and_save(
+      df_counts = counts_cls,
+      title_sub = paste0("Session: ", session_name, " — Class ", cls),
+      png_path  = png_cls,
+      measuretype = measuretype,
+      palette = class_palette
+    )
+  }
+}
+
+
 
