@@ -1,0 +1,82 @@
+
+=================================================
+ONE-WAY ANOVA (Step-by-step guide implementation)
+=================================================
+
+STEP 1: Independence + Normality
+- Independence: YOU must guarantee this by design (different players per group, no repeated measures).
+- Normality: we'll inspect Q-Q plots per group (visual).
+
+Reading: /Users/inesdattatreya/Library/CloudStorage/OneDrive-DelftUniversityofTechnology/BEP_copy/BranchInes/Scripts_inesdattatreya/data_output/GP2_income_25-24_sessions/intermediate_spendshare_ANOVA/player_spendshare_240924.xlsx 
+Sheet  : player_spendshare 
+-/                                                                                                                                       /                                                                                                                                       -                                                                                                                                       
+OK: Each player appears once.
+
+Group sizes:
+# A tibble: 3 × 2
+  classes     n
+  <fct>   <int>
+1 1           4
+2 2          37
+3 3          25
+
+Balanced design? FALSE
+
+Normality check: Q-Q plots per group (see Plots pane)
+
+Boxplot (see Plots pane)
+
+STEP 2: Levene's test (homogeneity of variances)
+Levene's Test for Homogeneity of Variance (center = median)
+      Df F value Pr(>F)
+group  2  2.3415 0.1045
+      63               
+Levene p = 0.1044978 
+
+STEP 3: Choose ANOVA method
+- Variances OK (p > .05) -> Standard ANOVA (aov)
+                      Df Sum Sq Mean Sq F value Pr(>F)  
+df_clean[[group_col]]  2  0.430 0.21515    3.98 0.0236 *
+Residuals             63  3.406 0.05406                 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+ANOVA diagnostics (Residuals, QQ, etc.) (see Plots pane)
+
+Shapiro-Wilk test on ANOVA residuals:
+
+	Shapiro-Wilk normality test
+
+data:  residuals(aov_model)
+W = 0.95344, p-value = 0.01469
+
+
+STEP 4: Evaluate omnibus test
+Primary method: aov 
+Primary p-value: 0.0235711 
+
+RESULT: Significant (p < .05). Proceed to follow-up.
+
+STEP 5/6: Post hoc strategy
+- If planned hypotheses existed -> contrasts (not implemented here)
+- Else -> post hoc tests
+
+Post hoc: WRS2::mcppb20 (percentile bootstrap post hoc) 
+Call:
+WRS2::mcppb20(formula = as.formula(paste(dv_col, "~", group_col)), 
+    data = df_clean, tr = 0.2)
+
+          psihat ci.lower ci.upper p-value
+1 vs. 2 -0.24955 -0.41100 -0.06735 0.00000
+1 vs. 3 -0.34759 -0.50248 -0.16719 0.00000
+2 vs. 3 -0.09805 -0.25385  0.10284 0.23372
+
+
+[SAVED] Excel results -> /Users/inesdattatreya/Library/CloudStorage/OneDrive-DelftUniversityofTechnology/BEP_copy/BranchInes/Scripts_inesdattatreya/fig_output/GP2_income_25-24_sessions/ANOVA_spendshare_LCA/ANOVA_spendshare_LCA/Session_240924/tables/ANOVA_results_Session_240924.xlsx
+[SAVED] Figures folder -> /Users/inesdattatreya/Library/CloudStorage/OneDrive-DelftUniversityofTechnology/BEP_copy/BranchInes/Scripts_inesdattatreya/fig_output/GP2_income_25-24_sessions/ANOVA_spendshare_LCA/ANOVA_spendshare_LCA/Session_240924/figures
+
+=============================
+DONE
+Primary test used: aov 
+Post hoc used    : WRS2::mcppb20 (percentile bootstrap post hoc) 
+=============================

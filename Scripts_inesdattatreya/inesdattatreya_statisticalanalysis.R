@@ -22,94 +22,108 @@ library(ggtext)
 scriptfolder_path <- dirname(rstudioapi::getActiveDocumentContext()$path)
 setwd(scriptfolder_path)
 
+# BranchInes is one level up from Scripts_inesdattatreya
+branch_path <- dirname(scriptfolder_path)
+
 # Define input/output directories
 functionfolder_path <- file.path(scriptfolder_path, "functions")
-dataset_path <- file.path(dirname(scriptfolder_path), "Datasets")
+dataset_path <- file.path(branch_path, "Datasets")
 
 # Output directories (created automatically if missing)
-data_output_path <- file.path("data_output", "GP2_income_25-24_sessions")
-if (!dir.exists(data_output_path)) {
-  dir.create(data_output_path, recursive = TRUE)
-}
+data_output_path <- file.path(scriptfolder_path, "data_output", "GP2_income_25-24_sessions")
+if (!dir.exists(data_output_path)) dir.create(data_output_path, recursive = TRUE)
 
-fig_output_path <- file.path("fig_output", "GP2_income_25-24_sessions")
-if (!dir.exists(fig_output_path)) {
-  dir.create(fig_output_path, recursive = TRUE)
-}
-
+fig_output_path <- file.path(scriptfolder_path, "fig_output", "GP2_income_25-24_sessions")
+if (!dir.exists(fig_output_path)) dir.create(fig_output_path, recursive = TRUE)
+anova_root_dir <- output_base_dir
 github <- "vjcortesa"
 
 # Load custom ANOVA function
 source(file.path(functionfolder_path, "GP3_annehuitema2003_welfare_spendshare_ANOVA_function.R"))
 
 # =========================
-# Paths used in this script
+# Paths used in this script 
 # =========================
 
 # Directory containing Improv_dist session files
-input_dir <- "/Users/inesdattatreya/Library/CloudStorage/OneDrive-DelftUniversityofTechnology/BEP/BranchInes/Scripts_inesdattatreya/data_output/GP3_improvements_25-24_sessions"
+input_dir <- file.path(scriptfolder_path, "data_output", "GP3_improvements_25-24_sessions")
+if (!dir.exists(input_dir)) dir.create(input_dir, recursive = TRUE)
 
-# Base directory for ANOVA outputs (plots + tables)
-output_base_dir <- normalizePath("~/Desktop/ANOVA_spendshare_LCA", mustWork = FALSE)
+# Base directory for ANOVA outputs (plots + tables) -> inside your fig_output folder
+output_base_dir <- file.path(fig_output_path, "ANOVA_spendshare_LCA")
+if (!dir.exists(output_base_dir)) dir.create(output_base_dir, recursive = TRUE)
 
 # Directory for intermediate spendshare files (used as ANOVA input)
-intermediate_dir <- "/Users/inesdattatreya/Library/Mobile Documents/iCloud~is~workflow~my~workflows/Documents"
+intermediate_dir <- file.path(data_output_path, "intermediate_spendshare_ANOVA")
+if (!dir.exists(intermediate_dir)) dir.create(intermediate_dir, recursive = TRUE)
 
-# File containing LCA class assignments for all sessions
-class_file <- normalizePath(path.expand(
-  "~/Library/CloudStorage/OneDrive-DelftUniversityofTechnology/BEP/BranchInes/Datasets/allsessions_withclasses.xlsx"
-), mustWork = TRUE)
-
-# Session identifiers
-sessions <- c("240924", "250923", "251007")
 
 # =========================
-# Read and prepare class data
+# Read and prepare class data (per session files)
 # =========================
 
-class_df_raw <- read_xlsx(class_file)
+library(purrr)
 
-# Ensure class column is consistently named "classes"
-if (!("classes" %in% names(class_df_raw)) && ("class" %in% names(class_df_raw))) {
-  class_df_raw <- class_df_raw %>% rename(classes = class)
+# Jouw bestanden staan in: scriptfolder_path/data_output
+class_input_dir <- file.path(scriptfolder_path, "data_output")
+stopifnot(dir.exists(class_input_dir))
+
+
+# Pak exact jouw drie bestanden (met of zonder .xlsx)
+class_files <- list.files(
+  path = class_input_dir,
+  pattern = "^inesdattatreya_G2_riskp_dist_(2409|2509|2510)(\\.xlsx)?$",
+  full.names = TRUE
+)
+
+print(class_files)
+stopifnot(length(class_files) > 0)
+
+# Helper: sessie-id uit filename halen
+# -> past aan naar jouw format. Hier pakt hij de laatste 4 cijfers vóór .xlsx (zoals 2409)
+get_session_id <- function(fp) {
+  fname <- basename(fp)
+  # pakt laatste 4 digits voor .xlsx, bv "2409"
+  sid <- str_match(fname, "(\\d{4})(?=\\.xlsx$)")[,2]
+  if (is.na(sid)) sid <- fname
+  sid
 }
 
-# Sanity checks
-stopifnot("Q_PlayerNumber" %in% names(class_df_raw))
-stopifnot("classes" %in% names(class_df_raw))
+# Lees alles in en plak onder elkaar
+class_df_raw <- purrr::map_dfr(class_files, function(fp) {
+  df <- readxl::read_xlsx(fp)
+  
+  stopifnot("player_code" %in% names(df))
+  stopifnot("lca_class" %in% names(df))
+  
+  df %>%
+    transmute(
+      session_id  = get_session_id(fp),
+      player_code = tolower(str_trim(as.character(player_code))),
+      classes     = suppressWarnings(as.integer(lca_class))
+    )
+})
 
-# Create a clean class lookup table:
-# one row per player_code, resolving duplicates by modal class
+# 1 rij per (sessie, player) — duplicates binnen sessie oplossen
 class_df <- class_df_raw %>%
-  transmute(
-    player_code = tolower(str_trim(as.character(Q_PlayerNumber))),
-    classes = suppressWarnings(as.integer(classes))
-  ) %>%
-  filter(!is.na(player_code), !is.na(classes)) %>%
-  group_by(player_code) %>%
+  filter(!is.na(player_code), player_code != "",
+         !is.na(classes)) %>%
+  group_by(session_id, player_code) %>%
   summarise(
     classes = as.integer(names(sort(table(classes), decreasing = TRUE))[1]),
     .groups = "drop"
   )
 
-cat("Number of unique players with class assignments:", nrow(class_df), "\n")
+cat("Aantal unieke (sessie, player) met class:", nrow(class_df), "\n")
 
 # =========================
 # Plot: class distribution (all sessions combined)
-# Saved inside the ANOVA output folder (same place as your session outputs)
 # =========================
-
-# Make sure the ANOVA output folder exists
-anova_root_dir <- file.path(output_base_dir, "ANOVA_spendshare_LCA")
-dir.create(anova_root_dir, recursive = TRUE, showWarnings = FALSE)
-
-# Count respondents per class (1/2/3)
 class_counts <- class_df %>%
   filter(classes %in% c(1, 2, 3)) %>%
   count(classes) %>%
   mutate(classes = factor(classes, levels = c(1, 2, 3)))
 
-# Bar plot
 p_classdist <- ggplot(class_counts, aes(x = classes, y = n)) +
   geom_col() +
   labs(
@@ -120,6 +134,8 @@ p_classdist <- ggplot(class_counts, aes(x = classes, y = n)) +
   theme_minimal()
 
 print(p_classdist)
+
+
 
 # Save plot
 ggsave(
@@ -136,6 +152,9 @@ cat("Saved class distribution plot to: ",
 # =========================
 # Run analysis per session
 # =========================
+
+sessions <- c("240924", "250923", "251007")
+
 
 results <- vector("list", length(sessions))
 names(results) <- sessions
@@ -156,16 +175,33 @@ for (sess in sessions) {
   # Read required sheets
   meas <- read_xlsx(file_path, sheet = "measures_combined")
   players <- read_xlsx(file_path, sheet = "player")
+  # Add session_id that matches class_df (2409/2509/2510)
+  sess_month <- substr(sess, 1, 4)
   
-  # Standardise player identifiers
-  meas <- meas %>% mutate(player_code = tolower(str_trim(as.character(player_code))))
+  meas <- meas %>%
+    mutate(
+      player_code = tolower(str_trim(as.character(player_code))),
+      session_id  = sess_month
+    )
   
-  # Add LCA classes if not already present (sessions without embedded classes)
+  # Add LCA classes (join per sessie + player)
   if (!("classes" %in% names(meas))) {
-    meas <- meas %>% left_join(class_df, by = "player_code")
+    meas <- meas %>%
+      left_join(class_df, by = c("session_id", "player_code"))
   } else {
     meas <- meas %>% mutate(classes = suppressWarnings(as.integer(classes)))
   }
+  
+  
+  # Standardise player identifiers
+  #meas <- meas %>% mutate(player_code = tolower(str_trim(as.character(player_code))))
+  
+  # Add LCA classes if not already present (sessions without embedded classes)
+  #if (!("classes" %in% names(meas))) {
+    #meas <- meas %>% left_join(class_df, by = "player_code")
+  #} else {
+   # meas <- meas %>% mutate(classes = suppressWarnings(as.integer(classes)))
+  #}
   
   cat("Total measure rows:", nrow(meas),
       "| Missing class assignments:", sum(is.na(meas$classes)), "\n")

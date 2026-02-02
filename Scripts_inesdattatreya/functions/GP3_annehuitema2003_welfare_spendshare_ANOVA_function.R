@@ -1,3 +1,50 @@
+# ----------------------------
+# Output directories
+# ----------------------------
+if (is.null(output_base_dir)) {
+  output_base_dir <- file.path(
+    "data_output",
+    "GP3_25-24_sessions",
+    "ANOVA_spendshare_LCA"
+  )
+}
+
+if (!dir.exists(output_base_dir)) {
+  dir.create(output_base_dir, recursive = TRUE)
+}
+
+mcp1_to_df <- function(x) {
+  u <- unclass(x)
+  
+  # mcppb20: numerieke vectors met dezelfde lengte (psihat, ci.lower, ci.upper, p-value)
+  if (is.list(u)) {
+    cand <- u[sapply(u, function(z) is.numeric(z) && is.atomic(z))]
+    lens <- sapply(cand, length)
+    n <- as.integer(names(sort(table(lens), decreasing = TRUE)[1]))
+    cand <- cand[lens == n]
+    
+    df <- as.data.frame(cand, check.names = FALSE)
+    comp <- names(cand[[1]])
+    if (is.null(comp)) comp <- as.character(seq_len(n))
+    df <- cbind(comparison = comp, df)
+    rownames(df) <- NULL
+    if ("p.value" %in% names(df) && !"p-value" %in% names(df)) {
+      names(df)[names(df) == "p.value"] <- "p-value"
+    }
+    return(df)
+  }
+  
+  # als het toevallig matrix is
+  if (is.matrix(u)) {
+    df <- as.data.frame(u, check.names = FALSE)
+    df$comparison <- rownames(u)
+    rownames(df) <- NULL
+    return(dplyr::relocate(df, comparison))
+  }
+  
+  stop("Cannot convert posthoc object of class: ", paste(class(x), collapse = ", "))
+}
+
 run_spendshare_anova_stepguide <- function(
     data_path,
     file_name,
@@ -14,7 +61,7 @@ run_spendshare_anova_stepguide <- function(
     # NEW: saving outputs
     # ----------------------------
     save_outputs = TRUE,
-    output_base_dir = "~/Library/CloudStorage/OneDrive-DelftUniversityofTechnology/BEP/BranchInes/Scripts_inesdattatreya/data_output/GP3_improvements_25-24_sessions",
+    output_base_dir = NULL,
     output_folder_name = "ANOVA_spendshare_welfare"
 ) {
   
@@ -430,21 +477,37 @@ run_spendshare_anova_stepguide <- function(
       )
     }
     
-    # Posthoc table
     posthoc_df <- NULL
     if (!is.null(posthoc_result)) {
       if (posthoc_method == "TukeyHSD") {
-        # TukeyHSD returns a list; take first element (factor)
         first_name <- names(posthoc_result)[1]
         posthoc_df <- as.data.frame(posthoc_result[[first_name]])
         posthoc_df$comparison <- rownames(posthoc_result[[first_name]])
         posthoc_df <- posthoc_df[, c("comparison", setdiff(names(posthoc_df), "comparison"))]
         rownames(posthoc_df) <- NULL
+        
+      } else if (posthoc_method == "mcppb20") {
+        # Robust WRS2 posthoc (class 'mcp1'): convert safely
+        posthoc_df <- tryCatch(
+          mcp1_to_df(posthoc_result),
+          error = function(e) {
+            message("Posthoc table not saved (mcppb20): ", e$message)
+            NULL
+          }
+        )
+        
       } else {
-        # mcppb20 and games_howell already look like data frames
-        posthoc_df <- as.data.frame(posthoc_result)
+        # other methods: try a normal conversion, but don't crash the whole session
+        posthoc_df <- tryCatch(
+          as.data.frame(posthoc_result),
+          error = function(e) {
+            message("Posthoc table not saved: ", e$message)
+            NULL
+          }
+        )
       }
     }
+    
     
     summary_run_df <- data.frame(
       session_id = session_id,
