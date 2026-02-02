@@ -1,0 +1,68 @@
+
+=================================================
+ONE-WAY ANOVA (Step-by-step guide implementation)
+=================================================
+
+STEP 1: Independence + Normality
+- Independence: YOU must guarantee this by design (different players per group, no repeated measures).
+- Normality: we'll inspect Q-Q plots per group (visual).
+
+Reading: C:/Users/annes/OneDrive/Bureaublad/BEP data analysis/Scripts_annehuitema2003/data_output/GP3_improvements_25-24_sessions/income_ratio_satis_plot/Session_240924/vjcortesa_spendshare_meanplayers_S240924_AllRounds_Gall_Pall.xlsx 
+Sheet  : player_spendshare 
+-/                                                                                   /                                                                                   -                                                                                   
+OK: Each player appears once.
+
+Group sizes:
+# A tibble: 6 × 2
+  welfare_level     n
+  <fct>         <int>
+1 High             10
+2 High-average     25
+3 Low               7
+4 Low-average       8
+5 Very High        10
+6 Very Low          7
+
+Balanced design? FALSE
+
+Normality check: Q-Q plots per group (see Plots pane)
+
+Boxplot (see Plots pane)
+
+STEP 2: Levene's test (homogeneity of variances)
+Levene's Test for Homogeneity of Variance (center = median)
+      Df F value Pr(>F)
+group  5   0.861 0.5125
+      61               
+Levene p = 0.5125162 
+
+STEP 3: Choose ANOVA method
+- Variances OK (p > .05) -> Standard ANOVA (aov)
+                      Df Sum Sq Mean Sq F value Pr(>F)
+df_clean[[group_col]]  5  0.536 0.10720   1.585  0.178
+Residuals             61  4.126 0.06764               
+
+ANOVA diagnostics (Residuals, QQ, etc.) (see Plots pane)
+
+Shapiro-Wilk test on ANOVA residuals:
+
+	Shapiro-Wilk normality test
+
+data:  residuals(aov_model)
+W = 0.96605, p-value = 0.06401
+
+
+STEP 4: Evaluate omnibus test
+Primary method: aov 
+Primary p-value: 0.1778201 
+
+RESULT: Not significant (p >= .05). Stop here per guide.
+
+[SAVED] Excel results -> C:/Users/annes/OneDrive/Bureaublad/BEP data analysis/Scripts_annehuitema2003/data_output/GP3_improvements_25-24_sessions/ANOVA_spendshare_welfare/Session_240924/tables/ANOVA_results_Session_240924.xlsx
+[SAVED] Figures folder -> C:/Users/annes/OneDrive/Bureaublad/BEP data analysis/Scripts_annehuitema2003/data_output/GP3_improvements_25-24_sessions/ANOVA_spendshare_welfare/Session_240924/figures
+
+=============================
+DONE
+Primary test used: aov 
+Post hoc used    : none 
+=============================
