@@ -43,6 +43,9 @@ combine_csvs_to_excel <- function(folder_path = "local path", folder_pattern = "
   output_filename <- paste0(output_prefix, "_", folder_base, ".xlsx")
   data_output_dir <- paste0(script_dir,"/data_output")
   output_path <- file.path(data_output_dir, output_filename)
+  message("📁 CSV folder used: ", target_folder)
+  message("📄 Output Excel filename: ", output_filename)
+  message("📍 Full output path: ", output_path)
   
   # Save workbook
   saveWorkbook(wb, output_path, overwrite = TRUE)
