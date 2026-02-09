@@ -156,12 +156,23 @@ housingarea_avg_inhabitants_plot <- function(dataset,
       y        = y_label,
       fill     = "Welfare level"
     ) +
-    theme_minimal() +
+    theme_minimal(base_size = 14) +   # <-- alles in één keer groter
     theme(
-      axis.text.y     = element_text(size = 10),
-      plot.title      = element_text(hjust = 0.5),
-      plot.subtitle   = element_text(hjust = 0.5, size = 10),
-      legend.position = "right"
+      # TITELS
+      plot.title        = element_text(hjust = 0.5, size = 20, face = "bold"),
+      plot.subtitle     = element_text(hjust = 0.5, size = 14),
+      plot.title.position = "plot",
+      
+      # ASSEN
+      axis.title.x      = element_text(size = 15),
+      axis.title.y      = element_text(size = 15),
+      axis.text.x       = element_text(size = 13),
+      axis.text.y       = element_text(size = 13),
+      
+      # LEGEND
+      legend.title      = element_text(size = 14),
+      legend.text       = element_text(size = 12),
+      legend.position   = "right"
     )
   
   # --------- 9. Opslaan ---------------------------------------------------

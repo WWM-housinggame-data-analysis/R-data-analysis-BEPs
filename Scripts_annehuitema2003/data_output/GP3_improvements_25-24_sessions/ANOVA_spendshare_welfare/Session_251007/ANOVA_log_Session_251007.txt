@@ -9,7 +9,7 @@ STEP 1: Independence + Normality
 
 Reading: C:/Users/annes/OneDrive/Bureaublad/BEP data analysis/Scripts_annehuitema2003/data_output/GP3_improvements_25-24_sessions/income_ratio_satis_plot/Session_251007/vjcortesa_spendshare_meanplayers_S251007_AllRounds_Gall_Pall.xlsx 
 Sheet  : player_spendshare 
--/                                                                                   /                                                                                   -                                                                                   
+-/                                                                                           /                                                                                           -                                                                                           
 OK: Each player appears once.
 
 Group sizes:
@@ -58,7 +58,7 @@ Degrees of freedom 2: 7.94
 p-value: 0.27656 
 
 Explanatory measure of effect size: 0.38 
-Bootstrap CI: [0.3; 0.88]
+Bootstrap CI: [0.29; 1.06]
 
 Robust ANOVA p = 0.2765649 
 

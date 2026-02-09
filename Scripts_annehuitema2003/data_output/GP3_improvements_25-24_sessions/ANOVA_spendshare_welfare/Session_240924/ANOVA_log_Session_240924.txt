@@ -9,7 +9,7 @@ STEP 1: Independence + Normality
 
 Reading: C:/Users/annes/OneDrive/Bureaublad/BEP data analysis/Scripts_annehuitema2003/data_output/GP3_improvements_25-24_sessions/income_ratio_satis_plot/Session_240924/vjcortesa_spendshare_meanplayers_S240924_AllRounds_Gall_Pall.xlsx 
 Sheet  : player_spendshare 
--/                                                                                   /                                                                                   -                                                                                   
+-/                                                                                           /                                                                                           -                                                                                           
 OK: Each player appears once.
 
 Group sizes:

@@ -19,8 +19,7 @@ library(ggimage)
 library(htmlwidgets)
 library(webshot)
 library(tibble)
-
-library(webshot)
+library(base64enc)
 
 # ---- Locate PhantomJS installed by webshot::install_phantomjs() (Windows) ----
 pjs_root <- file.path(Sys.getenv("APPDATA"), "PhantomJS")
@@ -51,23 +50,6 @@ plot_out_dir <- plot_out_dir <- "C:/Users/annes/OneDrive/Bureaublad/BEP data ana
 # Saves to:
 # C:\Users\RobiDattatreya\OneDrive - Delft University of Technology\BEP\BranchInes\Scripts_inesdattatreya\fig_output\distribution_measures
 # -----------------------------
-
-# Load necessary libraries
-library(readxl)
-library(readr)
-library(rstudioapi)
-library(sqldf)
-library(dplyr)
-library(stringr)
-library(writexl)
-library(tidyr)
-library(ggplot2)
-library(ggtext)
-library(plotly)
-library(ggimage)
-library(htmlwidgets)
-library(webshot)
-library(base64enc)
 
 # Step 1: Data Settings ---------------------------------------------------
 
@@ -465,18 +447,23 @@ initial_clause))
       p,
       title = list(
         text = paste0(
-          "Distribution of measures",
-          "<br><sub style='color:#666666;font-size:16px;'>",
+          "<b>Distribution of measures</b>",
+          "<br><span style='color:#666666;font-size:20px;'>",
           title_sub,
-          "</sub>"
+          "</span>"
         ),
         x = 0.5,
         xanchor = "center",
-        font = list(size = 22, color = "#333333")
+        font = list(size = 30, color = "#222222")
       ),
       barmode = "stack",
+      
       xaxis = list(
-        title = "Count",
+        title = list(
+          text = "<b>Count</b>",     # <-- vet
+          font = list(size = 24)
+        ),
+        tickfont = list(size = 18),
         range = c(x_off * 1.5, x_max * 1.1),
         tickmode = "array",
         tickvals = tick_vals,
@@ -485,10 +472,27 @@ initial_clause))
         zerolinecolor = "#aaaaaa",
         zerolinewidth = 1
       ),
-      yaxis = list(title = "Improvement type"),
-      legend = list(title = list(text = "Welfare level")),
-      margin = list(l = 160)
+      
+      yaxis = list(
+        title = list(
+          text = "<b>Type of measures</b>",  # <-- vet + andere tekst
+          font = list(size = 24)
+        ),
+        tickfont = list(size = 20)          # <-- measure labels groter
+      ),
+      
+      legend = list(
+        title = list(
+          text = "Welfare level",
+          font = list(size = 22)
+        ),
+        font = list(size = 20),             # <-- welfare levels groter
+        itemsizing = "constant"
+      ),
+      
+      margin = list(l = 220, r = 140, t = 150, b = 90)  # <-- zodat alles past
     )
+    
     
     images_list <- lapply(seq_len(nrow(icon_map)), function(i) {
       list(
@@ -515,9 +519,9 @@ initial_clause))
       webshot::webshot(
         url = html_file,
         file = png_path,
-        vwidth = 1600,
-        vheight = 1000,
-        zoom = 2
+        vwidth = 1800,
+        vheight = 1100,
+        zoom = 2.5
       )
       cat("[DEBUG] Saved:", png_path, "\n")
     }, error = function(e) {
@@ -536,9 +540,9 @@ initial_clause))
       webshot::webshot(
         url = html_file,
         file = png_path,
-        vwidth = 1600,
-        vheight = 1000,
-        zoom = 2
+        vwidth = 1800,
+        vheight = 1100,
+        zoom = 2.5
       )
       cat("[DEBUG] Saved:", png_path, "\n")
     }, error = function(e) {
@@ -697,18 +701,22 @@ initial_clause))
     p,
     title = list(
       text = paste0(
-        "Distribution of measures",
-        "<br><sub style='color:#666666;font-size:16px;'>",
+        "<b>Distribution of measures</b>",
+        "<br><span style='color:#666666;font-size:20px;'>",
         title_plot,
-        "</sub>"
+        "</span>"
       ),
       x = 0.5,
       xanchor = "center",
-      font = list(size = 22, color = "#333333")
+      font = list(size = 30, color = "#222222")
     ),
     barmode = "stack",
     xaxis = list(
-      title = "Count",
+      title = list(
+        text = "<b>Count</b>",
+        font = list(size = 24)
+      ),
+      tickfont = list(size = 18),
       range = c(x_off * 1.5, x_max * 1.1),
       tickmode = "array",
       tickvals = tick_vals,
@@ -717,9 +725,22 @@ initial_clause))
       zerolinecolor = "#aaaaaa",
       zerolinewidth = 1
     ),
-    yaxis = list(title = "Improvement type"),
-    legend = list(title = list(text = "Round Number")),
-    margin = list(l = 160)
+    yaxis = list(
+      title = list(
+        text = "<b>Type of measures</b>",
+        font = list(size = 24)
+      ),
+      tickfont = list(size = 20)
+    ),
+    legend = list(
+      title = list(
+        text = "Round number",
+        font = list(size = 22)
+      ),
+      font = list(size = 20),
+      itemsizing = "constant"
+    ),
+    margin = list(l = 220, r = 140, t = 150, b = 90)
   )
   
   images_list <- lapply(seq_len(nrow(icon_map)), function(i) {
@@ -768,9 +789,9 @@ initial_clause))
     webshot::webshot(
       url = html_file,
       file = png_file,
-      vwidth = 1600,
-      vheight = 1000,
-      zoom = 2
+      vwidth = 1800,
+      vheight = 1100,
+      zoom = 2.5
     )
     cat("[DEBUG] webshot finished OK\n")
   }, error = function(e) {

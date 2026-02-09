@@ -424,6 +424,37 @@ initialhousemeasure <- sqldf("
   FROM playerround
 "))
   
+  if (dataset_date == "2409" || dataset_date == "240924") {
+    df_income_dist$personal_cost_used <- df_income_dist$calculated_costs_personal_measures
+    df_income_dist$house_cost_used    <- df_income_dist$calculated_costs_house_measures
+  } else {
+    df_income_dist$personal_cost_used <- df_income_dist$cost_personal_measures_bought
+    df_income_dist$house_cost_used    <- df_income_dist$cost_house_measures_bought
+  }
+  
+  # NEW: NA -> 0 so the "other" category becomes 0% instead of blank
+  df_income_dist$personal_cost_used[is.na(df_income_dist$personal_cost_used)] <- 0
+  df_income_dist$house_cost_used[is.na(df_income_dist$house_cost_used)] <- 0
+  
+  df_income_dist$total_measures_spent <- rowSums(
+    df_income_dist[, c("personal_cost_used", "house_cost_used")],
+    na.rm = TRUE
+  )
+  
+  df_income_dist$pct_personal_of_total_measures <- ifelse(
+    df_income_dist$total_measures_spent > 0,
+    df_income_dist$personal_cost_used / df_income_dist$total_measures_spent * 100,
+    NA_real_
+  )
+  
+  df_income_dist$pct_house_of_total_measures <- ifelse(
+    df_income_dist$total_measures_spent > 0,
+    df_income_dist$house_cost_used / df_income_dist$total_measures_spent * 100,
+    NA_real_
+  )
+  
+  
+  
   # Calculate the round costs to check the spendable income
   # "paid_debt" not used in the calculations because is taken already when the spendable income comes as a negative value
   # If either column has NA, the sum will also be NA unless the sum is done this way
@@ -480,5 +511,5 @@ initialhousemeasure <- sqldf("
     message("Error: ", e$message)
   })
   
-  return (df_income_dist)
-}
+  return (df_income_dist)}
+
