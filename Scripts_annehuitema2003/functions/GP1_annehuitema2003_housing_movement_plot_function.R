@@ -10,6 +10,7 @@ housing_movement_plot <- function(movement_summary,
   library(dplyr)
   library(ggplot2)
   library(stringr)
+  library(scales)
   
   # --------- checks ----------
   needed_cols <- c("from_area", "to_area", "welfare_level", "n_moves")
@@ -35,27 +36,37 @@ housing_movement_plot <- function(movement_summary,
     mutate(
       from_area     = factor(from_area, levels = area_order),
       to_area       = factor(to_area, levels = area_order),
-      welfare_level = factor(welfare_level, levels = welfare_order)
+      welfare_level = factor(welfare_level, levels = welfare_order),
+      n_moves       = suppressWarnings(as.numeric(n_moves))
     ) %>%
     filter(!is.na(from_area), !is.na(to_area))
+  
+  
   
   # labels inside bars
   df <- df %>% mutate(label_txt = as.character(n_moves))
   
+  # --------- x-axis integer breaks ----------
+  x_max <- max(df$n_moves, na.rm = TRUE)
+
   # --------- plot ----------
   plot <- ggplot(df, aes(y = from_area, x = n_moves, fill = welfare_level)) +
     geom_col(position = position_dodge(width = 0.8), width = 0.7) +
     geom_text(
       aes(label = label_txt),
       position = position_dodge(width = 0.8),
-      hjust = 1.15,       # inside bar
+      hjust = 1.15,       # inside bar #grootte aangepast
       color = "black",
-      size = 3
+      size = 4   #groote aangepast
     ) +
     facet_wrap(~ to_area, ncol = 1, strip.position = "right") +
-    scale_x_continuous(expand = expansion(mult = c(0, 0.05))) +
+    scale_x_continuous(
+      expand = expansion(mult = c(0, 0.05)),
+      breaks = seq(0, ceiling(x_max), by = 1),
+      labels = function(x) as.integer(x)
+    ) +
     labs(
-      title = "Housing movements between living areas",
+      title = "Housing movements across living areas",
       subtitle = paste0("Session: ", dataset_date, "  |  number of moves from → to"),
       x = "Number of moves (house changes)",
       y = "Moved from living area",
@@ -71,15 +82,39 @@ housing_movement_plot <- function(movement_summary,
         "Very High"    = "#8B5A1A"
       )
     ) +
-    theme_minimal() +
+    theme_minimal(base_size = 14) +  # <-- alles groter
     theme(
-      plot.title         = element_text(hjust = 0.5),
-      plot.subtitle      = element_text(hjust = 0.5),
+      plot.title         = element_text(hjust = 0.5, size = 18, face = "bold"),
+      plot.subtitle      = element_text(hjust = 0.5, size = 13),
+      axis.title         = element_text(size = 14),
+      axis.text          = element_text(size = 12),
+      legend.title       = element_text(size = 13),
+      legend.text        = element_text(size = 12),
+      
+      # facet strip: strak maar subtiel
+      strip.background   = element_rect(
+        fill = "grey92",
+        colour = NA
+      ),
+      strip.text.y.right = element_text(
+        angle = 0,
+        size  = 12,
+        face  = "bold",
+        margin = margin(t = 6, b = 6)
+      ),
+      
+      # grid (zoals je had)
+      panel.grid.major.x = element_line(linewidth = 0.6),
+      panel.grid.minor.x = element_line(linewidth = 0.35),
+      panel.grid.major.y = element_line(linewidth = 0.4),
+      panel.grid.minor.y = element_blank(),
+      
       legend.position    = "right",
       strip.placement    = "outside",
-      strip.text.y.right = element_text(angle = 0),
       panel.spacing      = unit(0.8, "lines")
     )
+  
+  
   
   # --------- save ----------
   base_dir    <- file.path(fig_output_root, gp1_folder, "housing_movement_plot")
