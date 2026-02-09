@@ -65,6 +65,8 @@ combine_csvs_to_excel(dataset_path,session_2409)
 # Select the relevant tables for the income distribution
 GP2_tables <- c("gamesession", "group", "groupround", "playerround", "player","measuretype","personalmeasure","housemeasure", "housegroup")
 
+
+
 # Select the variables for the income distribution plot
 var_income_dist <- c(
   "gamesession_name", "group_name",
@@ -73,9 +75,11 @@ var_income_dist <- c(
   "profit_sold_house", "spent_savings_for_buying_house",
   "cost_taxes", "mortgage_payment",
   "cost_house_measures_bought", "cost_personal_measures_bought",
-  "cost_fluvial_damage", "cost_pluvial_damage",
+  "cost_fluvial_damage", "cost_pluvial_damage","class",
   "spendable_income"
 )
+
+
 
 #GP2_2510 <- income_dist_table(csv_list_2510, GP2_tables, var_income_dist)
 #GP2_2509 <- income_dist_table(csv_list_2509, GP2_tables, var_income_dist)
@@ -100,6 +104,13 @@ names(gamesession)[names(gamesession) == "name"] <- "gamesession_name"
 dataset_date <- str_extract(gamesession$gamesession_name, "\\d+")
 dataset_output<- file.path(data_output_path,paste0("GP2_",dataset_date))
 print(dataset_output)
+
+
+##HOW DO WE NAME THE CLASSES?
+# Class 1: Low awareness/low cocncern ‘’Cautious optimists’’
+# Class 2: some awareness some experience: ‘’informed preparers’’
+# Class 3:  High experience, not worried: ‘’I don’t care’’
+# 
 
 # Create the function for the plot
 # Variables to create the
