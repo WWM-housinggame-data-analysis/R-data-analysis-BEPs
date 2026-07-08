@@ -24,7 +24,7 @@ webshot::install_phantomjs()
 # Step 1: Data Settings ---------------------------------------------------
 
 # ---- Output folder for measure distribution plots (PNG) ----
-plot_out_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/fig_output/distribution_measures"
+plot_out_dir <- "Scripts_inesdattatreya/fig_output/distribution_measures"
 
 # -----------------------------
 # MEASURE DISTRIBUTION PLOT (Plotly + icons) — AUTO-SAVE PNG PER SESSION
@@ -60,7 +60,7 @@ dataset_path <- file.path(dirname(scriptfolder_path), "Datasets")
 data_input_path <- file.path("data_output", "GP2_income_25-24_sessions")
 
 # Output folder for PNGs (YOUR requested path)
-plot_out_dir <- "C:/Users/RobiDattatreya/OneDrive - Delft University of Technology/BEP/BranchInes/Scripts_inesdattatreya/fig_output/distribution_measures"
+plot_out_dir <- file.path(dirname(scriptfolder_path), "fig_output", "distribution_measures")
 if (!dir.exists(plot_out_dir)) dir.create(plot_out_dir, recursive = TRUE)
 
 github <- "vjcortesa"
